@@ -1,0 +1,374 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gunmetal;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg-primary text-text-primary font-body antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    @apply bg-laser-cyan/30 text-text-primary;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-bg-primary;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gunmetal rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-metallic/50;
+  }
+}
+
+@layer components {
+  .steel-panel {
+    @apply bg-bg-secondary/80 border border-gunmetal backdrop-blur-sm;
+    background-image:
+      linear-gradient(135deg, rgba(37, 45, 57, 0.4) 0%, rgba(17, 23, 34, 0.6) 50%, rgba(37, 45, 57, 0.3) 100%),
+      linear-gradient(180deg, rgba(170, 183, 196, 0.03) 0%, transparent 50%);
+  }
+
+  .brushed-steel {
+    background-image:
+      linear-gradient(180deg, rgba(170, 183, 196, 0.06) 0%, transparent 30%, transparent 70%, rgba(170, 183, 196, 0.04) 100%),
+      linear-gradient(135deg, rgba(37, 45, 57, 0.5) 0%, rgba(17, 23, 34, 0.7) 50%, rgba(37, 45, 57, 0.4) 100%);
+  }
+
+  .steel-panel-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .steel-panel-hover:hover {
+    @apply border-laser-cyan/50;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 24px rgba(0, 229, 255, 0.12), inset 0 0 20px rgba(0, 229, 255, 0.05);
+  }
+
+  .laser-border {
+    position: relative;
+  }
+
+  .laser-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.5), transparent 40%, transparent 60%, rgba(139, 92, 246, 0.3));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.5), 0 0 40px rgba(0, 229, 255, 0.2);
+  }
+
+  .text-glow-violet {
+    text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+  }
+
+  .btn-laser {
+    @apply relative overflow-hidden font-display font-semibold uppercase tracking-wider transition-all duration-300;
+  }
+
+  .btn-laser::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .btn-laser:hover::after {
+    left: 100%;
+  }
+
+  .metallic-text {
+    background: linear-gradient(135deg, #F3F7FC 0%, #AAB7C4 50%, #F3F7FC 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .circuit-bg {
+    background-image:
+      linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .hud-corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-color: rgba(0, 229, 255, 0.6);
+    pointer-events: none;
+  }
+
+  .hud-corner-tl { top: 0; left: 0; border-top: 2px solid; border-left: 2px solid; }
+  .hud-corner-tr { top: 0; right: 0; border-top: 2px solid; border-right: 2px solid; }
+  .hud-corner-bl { bottom: 0; left: 0; border-bottom: 2px solid; border-left: 2px solid; }
+  .hud-corner-br { bottom: 0; right: 0; border-bottom: 2px solid; border-right: 2px solid; }
+
+  .clip-angular {
+    clip-path: polygon(
+      0 8px,
+      8px 0,
+      calc(100% - 8px) 0,
+      100% 8px,
+      100% calc(100% - 8px),
+      calc(100% - 8px) 100%,
+      8px 100%,
+      0 calc(100% - 8px)
+    );
+  }
+
+  .clip-angular-sm {
+    clip-path: polygon(
+      0 4px,
+      4px 0,
+      calc(100% - 4px) 0,
+      100% 4px,
+      100% calc(100% - 4px),
+      calc(100% - 4px) 100%,
+      4px 100%,
+      0 calc(100% - 4px)
+    );
+  }
+
+  .focus-cyan:focus-visible {
+    @apply border-laser-cyan outline-none;
+    box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.3);
+  }
+
+  .btn-pressed:active {
+    transform: scale(0.97);
+  }
+
+  .tech-grid {
+    background-image:
+      linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .section-separator {
+    position: relative;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.25), transparent);
+  }
+
+  .section-separator-arrow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: #080B12;
+    padding: 0 12px;
+    color: rgba(0, 229, 255, 0.6);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+  }
+}
+
+  /* ========================================
+     CURSOR-REACTIVE LIGHTING SYSTEM
+     All values driven by CSS custom properties
+     set by useCursorLight hook on :root.
+     No React re-renders on pointer move.
+     ======================================== */
+
+  :root {
+    --cursor-x: 50vw;
+    --cursor-y: 50vh;
+    --cursor-active: 0;
+    --cursor-trail-1-x: 50vw;
+    --cursor-trail-1-y: 50vh;
+    --cursor-trail-2-x: 50vw;
+    --cursor-trail-2-y: 50vh;
+    --cursor-trail-3-x: 50vw;
+    --cursor-trail-3-y: 50vh;
+  }
+
+  .cursor-light-layer {
+    opacity: var(--cursor-active, 0);
+    transition: opacity 0.6s ease;
+  }
+
+  /* Main soft cyan illumination with blue/violet outer edges */
+  .cursor-light-main {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        circle 280px at var(--cursor-x) var(--cursor-y),
+        rgba(0, 229, 255, 0.10) 0%,
+        rgba(0, 229, 255, 0.06) 20%,
+        rgba(37, 99, 255, 0.05) 45%,
+        rgba(139, 92, 246, 0.03) 70%,
+        transparent 100%
+      );
+    mix-blend-mode: screen;
+  }
+
+  /* Metallic reflection — reveals brushed-steel texture under cursor */
+  .cursor-light-metallic {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        circle 180px at var(--cursor-x) var(--cursor-y),
+        rgba(170, 183, 196, 0.06) 0%,
+        rgba(170, 183, 196, 0.03) 40%,
+        transparent 80%
+      );
+    mix-blend-mode: overlay;
+  }
+
+  /* Energy trail — fading positions behind the smoothed cursor */
+  .cursor-light-trail {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        circle 120px at var(--cursor-x) var(--cursor-y),
+        rgba(0, 229, 255, 0.04) 0%,
+        transparent 70%
+      );
+    mix-blend-mode: screen;
+    will-change: background;
+  }
+
+  .cursor-light-trail-1 {
+    background:
+      radial-gradient(
+        circle 100px at var(--cursor-trail-1-x) var(--cursor-trail-1-y),
+        rgba(0, 229, 255, 0.035) 0%,
+        transparent 70%
+      );
+    mix-blend-mode: screen;
+  }
+
+  .cursor-light-trail-2 {
+    background:
+      radial-gradient(
+        circle 80px at var(--cursor-trail-2-x) var(--cursor-trail-2-y),
+        rgba(37, 99, 255, 0.025) 0%,
+        transparent 70%
+      );
+    mix-blend-mode: screen;
+  }
+
+  .cursor-light-trail-3 {
+    background:
+      radial-gradient(
+        circle 60px at var(--cursor-trail-3-x) var(--cursor-trail-3-y),
+        rgba(139, 92, 246, 0.015) 0%,
+        transparent 70%
+      );
+    mix-blend-mode: screen;
+  }
+
+  /* Circuit grid reveal near cursor */
+  .cursor-light-circuit {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask:
+      radial-gradient(
+        circle 200px at var(--cursor-x) var(--cursor-y),
+        black 0%,
+        transparent 80%
+      );
+    mask:
+      radial-gradient(
+        circle 200px at var(--cursor-x) var(--cursor-y),
+        black 0%,
+        transparent 80%
+      );
+  }
+
+  /* Laser road cursor reactivity */
+  .laser-reactive {
+    transition: opacity 0.4s ease, filter 0.4s ease;
+  }
+
+  .laser-reactive-glow {
+    transition: opacity 0.3s ease, filter 0.3s ease;
+  }
+
+/* Tablet: reduce glow sizes */
+@media (max-width: 1024px) and (min-width: 769px) and (pointer: fine) {
+  .cursor-light-main {
+    background:
+      radial-gradient(
+        circle 200px at var(--cursor-x) var(--cursor-y),
+        rgba(0, 229, 255, 0.08) 0%,
+        rgba(37, 99, 255, 0.04) 45%,
+        transparent 85%
+      );
+  }
+  .cursor-light-circuit {
+    -webkit-mask:
+      radial-gradient(
+        circle 140px at var(--cursor-x) var(--cursor-y),
+        black 0%,
+        transparent 80%
+      );
+    mask:
+      radial-gradient(
+        circle 140px at var(--cursor-x) var(--cursor-y),
+        black 0%,
+        transparent 80%
+      );
+  }
+}
+
+/* Mobile: disable cursor effects entirely */
+@media (max-width: 768px), (pointer: coarse) {
+  .cursor-light-layer {
+    opacity: 0 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .cursor-light-layer {
+    opacity: 0 !important;
+  }
+}
