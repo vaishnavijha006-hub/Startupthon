@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Upload, X, AlertCircle, Loader2, User, Users, GraduationCap } from 'lucide-react';
 import HudCorners from '@/components/ui/HudCorners';
 import { DOMAINS, ACADEMIC_YEDS } from '@/data/content';
-import { validateRegistration, validateFile, hasErrors } from '@/utils/validation';
+import { validateRegistration, validateFile, validateRollNumber, hasErrors } from '@/utils/validation';
 import type {
   TeamType,
   Participant,
+  ParticipantErrors,
   StartupIdea,
   RegistrationErrors,
 } from '@/types';
@@ -52,11 +53,22 @@ function RegistrationPage() {
   };
 
   const updateParticipant = (index: number, field: keyof Participant, value: string) => {
+    const updatedParticipant = { ...participants[index], [field]: value };
     setParticipants((prev) => {
       const next = [...prev];
-      next[index] = { ...next[index], [field]: value };
+      next[index] = updatedParticipant;
       return next;
     });
+
+    if (field === 'academicYear' || field === 'rollNumber') {
+      setErrors((previousErrors) => {
+        const participantErrors: ParticipantErrors[] = (previousErrors?.participants ?? participants.map(() => ({}))).map((item) => ({ ...item }));
+        const rollNumberError = validateRollNumber(updatedParticipant.academicYear, updatedParticipant.rollNumber);
+        if (rollNumberError) participantErrors[index].rollNumber = rollNumberError;
+        else delete participantErrors[index].rollNumber;
+        return { participants: participantErrors, idea: previousErrors?.idea ?? {} };
+      });
+    }
   };
 
   const updateIdea = (field: keyof StartupIdea, value: string | boolean | null) => {
@@ -238,11 +250,22 @@ function RegistrationPage() {
                 />
                 <FormField
                   label="Roll Number"
-                  required
+                  required={Boolean(participant.academicYear && participant.academicYear !== '1st Year')}
+                  optional={participant.academicYear === '1st Year'}
                   value={participant.rollNumber}
                   onChange={(v) => updateParticipant(index, 'rollNumber', v)}
                   error={errors?.participants[index]?.rollNumber}
-                  placeholder="21CS001"
+                  placeholder="2503330100134"
+                  inputMode="numeric"
+                  hint={participant.academicYear
+                    ? 'Enter exactly 13 digits' + (participant.academicYear === '2nd Year'
+                      ? ' beginning with 25.'
+                      : participant.academicYear === '3rd Year'
+                        ? ' beginning with 24.'
+                        : participant.academicYear === '4th Year'
+                          ? ' beginning with 23.'
+                          : '.')
+                    : 'Select an academic year first.'}
                 />
                 <FormField
                   label="Phone Number"
@@ -451,16 +474,21 @@ interface FormFieldProps {
   error?: string;
   placeholder?: string;
   required?: boolean;
+  optional?: boolean;
+  hint?: string;
   type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
   options?: string[];
 }
 
-function FormField({ label, value, onChange, error, placeholder, required, type = 'text', options }: FormFieldProps) {
+function FormField({ label, value, onChange, error, placeholder, required, optional, hint, type = 'text', inputMode, options }: FormFieldProps) {
   return (
     <div>
       <label className="mb-2 block font-display text-sm font-medium uppercase tracking-wider text-text-secondary">
         {label} {required && <span className="text-laser-cyan">*</span>}
+        {optional && <span className="ml-1 text-xs normal-case text-text-secondary">(Optional)</span>}
       </label>
+      {hint && <p className="mb-2 text-xs text-text-secondary">{hint}</p>}
       {options ? (
         <select
           value={value}
@@ -477,6 +505,7 @@ function FormField({ label, value, onChange, error, placeholder, required, type 
       ) : (
         <input
           type={type}
+          inputMode={inputMode}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
