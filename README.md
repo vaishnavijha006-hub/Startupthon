@@ -1,6 +1,5 @@
 # Startupthon
-
-[![Open in Bolt](https://bolt.new/static/open-in-bolt.svg)](https://bolt.new/~/sb1-v2d2lb2d)
+https://codezy-startup-pitch-x0kr.bolt.host/
 🚀 CodezY – Startup Idea Pitching Event
 
 💡 About the Project
