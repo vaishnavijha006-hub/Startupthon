@@ -1,49 +1,62 @@
-import type { Registration } from '@/types';
+import type { DashboardRegistration } from '@/types';
 
-export interface ExportRow {
-  section: string;
-  rollNumber: string;
-  ideaTitle: string;
-}
+const CSV_HEADERS = [
+  'Registration ID',
+  'Student Name',
+  'Email',
+  'College (not collected; proposed field)',
+  'Academic Year',
+  'Roll Number',
+  'Section',
+  'Phone',
+  'Team Type',
+  'Idea Title',
+  'Idea Description',
+  'Domain',
+  'Prototype Available',
+  'Registration Date',
+];
 
-export function registrationsToExportRows(registrations: Registration[]): ExportRow[] {
-  const rows: ExportRow[] = [];
-  for (const reg of registrations) {
-    for (const p of reg.participants) {
-      rows.push({
-        section: p.section,
-        rollNumber: p.rollNumber,
-        ideaTitle: reg.idea.title,
-      });
+export function registrationsToCsv(registrations: DashboardRegistration[]): string {
+  const rows: string[][] = [CSV_HEADERS];
+
+  for (const registration of registrations) {
+    for (const participant of registration.participants) {
+      rows.push([
+        registration.id ?? '',
+        participant.fullName,
+        participant.email,
+        'Not collected',
+        participant.academicYear,
+        participant.rollNumber,
+        participant.section,
+        participant.phone,
+        registration.teamType,
+        registration.idea.title,
+        registration.idea.description,
+        registration.idea.domain,
+        registration.idea.prototypeAvailable === null ? '' : registration.idea.prototypeAvailable ? 'Yes' : 'No',
+        registration.createdAt ?? '',
+      ]);
     }
   }
-  return rows;
+
+  return `\uFEFF${rows.map((row) => row.map(escapeCsvCell).join(',')).join('\r\n')}`;
 }
 
-export function exportToCsv(rows: ExportRow[]): void {
-  const headers = ['Student Section', 'Student Roll Number', 'Startup Idea Title'];
-  const lines = [headers.join(',')];
-
-  for (const row of rows) {
-    const values = [row.section, row.rollNumber, row.ideaTitle].map(escapeCsv);
-    lines.push(values.join(','));
-  }
-
-  const csv = lines.join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+export function exportRegistrationsCsv(registrations: DashboardRegistration[]): void {
+  const blob = new Blob([registrationsToCsv(registrations)], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.setAttribute('download', 'codezy-registrations.csv');
+  link.download = 'codezy-registrations.csv';
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function escapeCsv(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
+function escapeCsvCell(value: string): string {
+  const safeValue = /^\s*[=+\-@]/.test(value) ? `'${value}` : value;
+  return `"${safeValue.replace(/"/g, '""')}"`;
 }

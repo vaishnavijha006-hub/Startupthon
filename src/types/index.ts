@@ -42,6 +42,15 @@ export interface Registration {
   createdAt: string;
 }
 
+/** Dashboard view of the submitted form, with optional metadata assigned by a future backend. */
+export interface DashboardRegistration {
+  id?: string;
+  teamType: TeamType;
+  participants: Participant[];
+  idea: StartupIdea;
+  createdAt?: string;
+}
+
 export interface ParticipantErrors {
   fullName?: string;
   academicYear?: string;
