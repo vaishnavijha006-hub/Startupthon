@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, AlertCircle, ChevronRight, Loader2, ShieldAlert } from 'lucide-react';
 import HudCorners from '@/components/ui/HudCorners';
 import { Logo } from '@/components/Logo';
 
 function AdminLogin() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
