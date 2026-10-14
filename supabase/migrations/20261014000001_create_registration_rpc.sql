@@ -362,8 +362,6 @@ REVOKE ALL ON FUNCTION public.submit_registration_internal(JSONB) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.submit_registration_internal(JSONB) FROM anon;
 REVOKE ALL ON FUNCTION public.submit_registration_internal(JSONB) FROM authenticated;
 
--- 2. Ensure service_role has USAGE on public schema to resolve function signature
-GRANT USAGE ON SCHEMA public TO service_role;
-
--- 3. Grant execution rights strictly to the service_role (used by Edge Functions)
+-- 2. Grant execution rights strictly to the service_role (used by Edge Functions)
+-- Note: service_role already possesses USAGE on the public schema in Supabase.
 GRANT EXECUTE ON FUNCTION public.submit_registration_internal(JSONB) TO service_role;
