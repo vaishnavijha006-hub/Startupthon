@@ -1,140 +1,115 @@
 # CodezY — Engineer The Future
 
-A startup pitch website for **CodezY**, presenting the vision, product, and value proposition to investors, partners, and early users.
+[CodezY](https://codezy-startup-pitch-x0kr.bolt.host/) is a student startup idea pitching event. It gives students a place to share ideas, show their creativity, and take a first step toward building something meaningful.
 
-🔗 **Live site:** https://codezy-startup-pitch-x0kr.bolt.host/
+Students can register individually or as a team and submit a startup idea. Submissions are reviewed, and selected students or teams may be invited to present their ideas to a panel.
 
-> **Status:** Frontend only. There is no backend, database, or API yet. Forms and calls to action are not yet connected to a server.
+> **Project status:** The website is currently frontend-only. Registration forms and calls to action are not connected to a backend or database. Supabase is the planned backend and has not yet been integrated. The admin dashboard is a frontend preview and does not provide real authentication or registration data.
 
----
+## Event overview
 
-## Table of Contents
+Participants can submit an idea title and description, choose a domain such as AI, healthcare, finance, education, or environment, describe prototype availability, and optionally upload a sketch. File storage is not connected yet. The current frontend supports individual and team registration.
 
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [Scripts](#scripts)
-- [Deployment](#deployment)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+The event process is:
 
----
+1. Students register and submit their startup ideas.
+2. The event team reviews submissions and may shortlist promising ideas.
+3. Selected students or teams may get an opportunity to pitch before a panel.
+4. Pitching sessions may take place over 3–4 days during faculty-approved time slots.
 
-## Overview
+Presentation schedules are intended to be shared manually through the official WhatsApp group; no WhatsApp integration is implemented on the website.
 
-CodezY Startup Pitch is a single-page marketing and pitch site. It is designed to explain what CodezY does, why it matters, and how people can get involved, in a few minutes of scrolling.
+### After shortlisting
 
-## Features
+Depending on the proposal and available resources, selected participants may have opportunities for mentorship, funding support, prototype development help, or technical support and networking. These opportunities are subject to availability and are not guaranteed.
 
-- Hero section with the core message: *Engineer The Future*
-- Problem, solution, and product sections
-- Responsive layout for desktop, tablet, and mobile
-- Call-to-action buttons for joining, contacting, or learning more
-- Clean, modern UI built for fast loading
+Students do not need a fully developed product to participate. An interesting idea, a clear understanding of the problem, and a possible solution are enough to get started.
 
-<!-- Update this list to match the sections actually on the site. -->
+## Website features
 
-## Tech Stack
+- Public event and startup pitch information.
+- Registration for individuals and teams, including participant and idea details.
+- Physical certificate announcement for successfully registered participants, subject to the event's certificate distribution process.
+- Admin login and dashboard frontend previews; authentication and registration data access are not connected.
+- Responsive layouts for desktop, tablet, and mobile.
 
-> Adjust this to match your actual project. Bolt projects commonly use the stack below.
+## Tech stack
 
-| Layer      | Technology                |
-| ---------- | ------------------------- |
-| Framework  | React                     |
-| Language   | TypeScript / JavaScript   |
-| Build tool | Vite                      |
-| Styling    | Tailwind CSS              |
-| Icons      | Lucide React              |
-| Hosting    | Bolt Hosting (`bolt.host`) |
+| Layer | Technology |
+| --- | --- |
+| UI | React |
+| Language | TypeScript |
+| Build tool | Vite |
+| Styling | Tailwind CSS |
+| Icons | Lucide React |
+| Routing | React Router |
+| Planned backend | Supabase (not integrated yet) |
 
-## Getting Started
+## Getting started
 
-### Prerequisites
+### Requirements
 
-- [Node.js](https://nodejs.org/) 18 or later
-- npm (comes with Node.js), or yarn / pnpm
+- Node.js 18 or later
+- npm
 
-### Installation
+### Run locally
 
 ```bash
-# 1. Clone the repository
-git clone <your-repo-url>
-cd codezy-startup-pitch
-
-# 2. Install dependencies
+git clone <your-repository-url>
+cd Startupthon
 npm install
-
-# 3. Start the development server
 npm run dev
 ```
 
-Then open the local URL shown in your terminal (usually `http://localhost:5173`).
+Open the local URL shown by Vite, usually `http://localhost:5173`.
 
-## Project Structure
+## Project structure
 
+```text
+src/
+├── components/       # Shared and admin UI components
+├── pages/            # Landing, registration, confirmation, and admin pages
+├── services/         # Data-source boundary for future backend integration
+├── types/            # Shared TypeScript types
+└── utils/            # Validation, dashboard helpers, and export utilities
+tests/                # Node.js tests for validation and frontend behavior
 ```
-codezy-startup-pitch/
-├── public/             # Static assets (favicon, images, og image)
-├── src/
-│   ├── components/     # Reusable UI components
-│   ├── App.tsx         # Main app / page layout
-│   ├── main.tsx        # Entry point
-│   └── index.css       # Global styles
-├── index.html          # HTML template (title, meta tags)
-├── package.json
-└── README.md
-```
-
-<!-- Update to match your real folder layout. -->
 
 ## Scripts
 
-| Command           | Description                         |
-| ----------------- | ----------------------------------- |
-| `npm run dev`     | Start the development server        |
-| `npm run build`   | Create a production build in `dist/` |
-| `npm run preview` | Preview the production build locally |
-| `npm run lint`    | Run the linter                      |
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Vite development server |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run the TypeScript check |
+| `npm run build` | Create the production build in `dist/` |
+| `node --test tests/*.test.mjs` | Run the Node.js test files |
 
 ## Deployment
 
-The site is deployed on **Bolt Hosting** and is publicly available at the live link above.
-
-To deploy somewhere else (Netlify, Vercel, GitHub Pages, Cloudflare Pages):
-
-```bash
-npm run build
-```
-
-Then upload or connect the generated `dist/` folder to your host.
+The public site is hosted at [codezy-startup-pitch-x0kr.bolt.host](https://codezy-startup-pitch-x0kr.bolt.host/). Build the project with `npm run build` and deploy the generated `dist/` directory to another static host if needed.
 
 ## Roadmap
 
-- [ ] Replace the default social preview image with a CodezY-branded one
-- [ ] Connect the contact / waitlist form to a backend or form service
-- [ ] Add a database for storing sign-ups
-- [ ] Add analytics
-- [ ] Improve SEO (meta description, Open Graph tags, sitemap)
-- [ ] Accessibility audit (contrast, keyboard navigation, alt text)
-- [ ] Add a custom domain
+- Connect registration submission and storage to the planned Supabase backend.
+- Implement real admin authentication and authorization.
+- Add server-side validation and registration data access.
+- Connect file storage for uploaded sketches.
+- Add analytics and continue improving accessibility and SEO.
 
 ## Contributing
 
-Contributions and suggestions are welcome.
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m "Add your feature"`
-4. Push the branch: `git push origin feature/your-feature`
-5. Open a pull request
+Suggestions and contributions are welcome. Create a feature branch, make focused changes, run the project checks, and open a pull request for review.
 
 ## License
 
-Add your license here (for example, MIT). If you haven't chosen one, remove this section.
+No license has been specified for this project yet.
+
+## Organized by
+
+**CodezY** — Think it. Pitch it. Build it.
+
+The event is organized with faculty permission. Shortlisting, pitching opportunities, and additional support depend on the event review process and available resources.
 
 ## Contact
 
