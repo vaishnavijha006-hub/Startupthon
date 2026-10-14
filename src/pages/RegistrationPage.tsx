@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Upload, X, AlertCircle, Loader2, User, Users } from 'lucide-react';
+import { ChevronRight, Upload, X, AlertCircle, Loader2, User, Users, GraduationCap } from 'lucide-react';
 import HudCorners from '@/components/ui/HudCorners';
 import { DOMAINS, ACADEMIC_YEDS } from '@/data/content';
 import { validateRegistration, validateFile, hasErrors } from '@/utils/validation';
@@ -131,6 +131,23 @@ function RegistrationPage() {
           <p className="mt-4 text-text-secondary">
             Submit your startup idea and team details to enter the CodezY Startup Pitch.
           </p>
+        </div>
+
+        <div className="relative mb-8 flex items-start gap-4 border border-laser-violet/40 bg-laser-violet/10 p-5 shadow-[0_0_20px_rgba(139,92,246,0.08)] clip-angular sm:p-6">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center border border-laser-violet/40 bg-laser-violet/10 text-laser-violet clip-angular-sm">
+            <GraduationCap className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <div>
+            <h2 className="font-display text-base font-bold uppercase tracking-wider text-laser-cyan sm:text-lg">
+              🎓 Physical Certificate Benefit
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-text-primary">
+              Every successfully registered participant will receive a physical copy of their certificate.
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+              Complete your registration to secure your participation.
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, ChevronRight, AlertTriangle, Home, MessageCircle } from 'lucide-react';
+import { CheckCircle, ChevronRight, AlertTriangle, Home, MessageCircle, GraduationCap } from 'lucide-react';
 import HudCorners from '@/components/ui/HudCorners';
 import type { TeamType, Participant, StartupIdea } from '@/types';
 
@@ -13,12 +13,14 @@ interface PendingRegistration {
 
 function RegistrationConfirmation() {
   const [data, setData] = useState<PendingRegistration | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const stored = sessionStorage.getItem('pendingRegistration');
     if (stored) {
       setData(JSON.parse(stored));
     }
+    setLoading(false);
   }, []);
 
   return (
@@ -34,16 +36,30 @@ function RegistrationConfirmation() {
           </div>
 
           <h1 className="font-display text-3xl font-bold uppercase tracking-wider text-text-primary sm:text-4xl">
-            Registration Received
+            {loading ? 'Loading Registration...' : data ? 'Submission Saved Locally' : 'Registration Not Found'}
           </h1>
           <p className="mt-4 text-text-secondary">
-            Your submission has been recorded locally. Final confirmation will be issued
-            once the backend registration system is connected.
+            {loading
+              ? 'Checking this browser for your saved draft.'
+              : data
+              ? 'Your details are saved in this browser as a draft. This is not an official event registration; final status will be available once the registration system is connected.'
+              : 'No registration data was found. Please complete the registration form first.'}
           </p>
 
           {/* Details */}
-          {data ? (
+          {loading ? null : data ? (
             <div className="mt-8 space-y-4 text-left">
+              <div className="flex items-start gap-3 border border-laser-violet/30 bg-laser-violet/5 p-4">
+                <GraduationCap className="h-5 w-5 shrink-0 text-laser-violet" aria-hidden="true" />
+                <div>
+                  <p className="font-display text-sm font-semibold uppercase tracking-wider text-text-primary">
+                    Physical Certificate Benefit
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+                    Once your registration is officially completed, you will be eligible to receive a physical copy of your certificate according to the event&apos;s certificate distribution process.
+                  </p>
+                </div>
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <DetailItem label="Draft Reference ID" value={data.draftId} mono />
                 <DetailItem label="Team Type" value={data.teamType === 'solo' ? 'Solo' : 'Duo'} />
@@ -94,8 +110,7 @@ function RegistrationConfirmation() {
           ) : (
             <div className="mt-8 border border-gunmetal bg-bg-primary/40 p-6 text-left">
               <p className="text-sm text-text-secondary">
-                No registration data found. If you arrived here without submitting the
-                form, please complete your registration first.
+                If you arrived here without submitting the form, please complete your registration first.
               </p>
             </div>
           )}
