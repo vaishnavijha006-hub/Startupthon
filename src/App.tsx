@@ -8,6 +8,7 @@ import RegistrationPage from '@/pages/RegistrationPage';
 import RegistrationConfirmation from '@/pages/RegistrationConfirmation';
 import AdminLogin from '@/pages/AdminLogin';
 import AdminDashboard from '@/pages/AdminDashboard';
+import AdminRouteGuard from '@/components/admin/AdminRouteGuard';
 
 function AppLayout() {
   const location = useLocation();
@@ -24,7 +25,9 @@ function AppLayout() {
           <Route path="/register" element={<RegistrationPage />} />
           <Route path="/registration-confirmation" element={<RegistrationConfirmation />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route element={<AdminRouteGuard />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Route>
         </Routes>
       </main>
       {!isAdmin && <Footer />}

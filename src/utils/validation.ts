@@ -83,6 +83,24 @@ export function validateRegistration(
   idea: StartupIdea,
 ): RegistrationErrors {
   const participantErrors = participants.map(validateParticipant);
+
+  if (teamType === 'duo' && participants.length === 2) {
+    const p1 = participants[0];
+    const p2 = participants[1];
+
+    const roll1 = p1.rollNumber?.trim();
+    const roll2 = p2.rollNumber?.trim();
+    if (roll1 && roll2 && roll1 === roll2) {
+      participantErrors[1].rollNumber = 'Both team members cannot share the same roll number';
+    }
+
+    const email1 = p1.email?.trim().toLowerCase();
+    const email2 = p2.email?.trim().toLowerCase();
+    if (email1 && email2 && email1 === email2) {
+      participantErrors[1].email = 'Both team members cannot share the same email address';
+    }
+  }
+
   const ideaErrors = validateIdea(idea);
   return { participants: participantErrors, idea: ideaErrors };
 }

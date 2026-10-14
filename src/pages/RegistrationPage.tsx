@@ -4,6 +4,7 @@ import { ChevronRight, Upload, X, AlertCircle, Loader2, User, Users, GraduationC
 import HudCorners from '@/components/ui/HudCorners';
 import { DOMAINS, ACADEMIC_YEDS } from '@/data/content';
 import { validateRegistration, validateFile, validateRollNumber, hasErrors } from '@/utils/validation';
+import { supabase } from '@/services/supabase';
 import type {
   TeamType,
   Participant,
@@ -97,7 +98,7 @@ function RegistrationPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
 
@@ -109,20 +110,58 @@ function RegistrationPage() {
       return;
     }
 
-    // Backend integration pending — navigate to confirmation with form data
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      const draftId = `DRAFT-${Date.now()}`;
+    try {
       const payload = {
+        teamType,
+        participants: participants.map((p) => ({
+          fullName: p.fullName,
+          academicYear: p.academicYear,
+          section: p.section,
+          rollNumber: p.rollNumber,
+          phone: p.phone,
+          email: p.email,
+        })),
+        idea: {
+          title: idea.title,
+          description: idea.description,
+          domain: idea.domain,
+          prototypeAvailable: idea.prototypeAvailable,
+          sketchFilePath: null,
+        },
+      };
+
+      const { data, error } = await supabase.functions.invoke('submit-registration', {
+        body: payload,
+      });
+
+      if (error) {
+        setSubmitError(error.message || 'Failed to connect to the registration service. Please try again.');
+        return;
+      }
+
+      if (!data || !data.success) {
+        setSubmitError(data?.error || 'Registration was not confirmed by the server. Please try again.');
+        return;
+      }
+
+      const confirmationPayload = {
         teamType,
         participants,
         idea,
-        draftId,
+        draftId: `REG-#${data.registrationNumber}`,
+        registrationId: data.registrationId,
+        registrationNumber: data.registrationNumber,
+        createdAt: data.createdAt,
       };
-      sessionStorage.setItem('pendingRegistration', JSON.stringify(payload));
+      sessionStorage.setItem('pendingRegistration', JSON.stringify(confirmationPayload));
       navigate('/registration-confirmation');
-    }, 800);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      setSubmitError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -457,7 +496,7 @@ function RegistrationPage() {
               )}
             </button>
             <p className="font-mono text-xs text-text-secondary">
-              Backend integration pending — registration data is not yet stored.
+              Your registration will be submitted securely to the server.
             </p>
           </div>
         </form>

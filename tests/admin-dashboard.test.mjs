@@ -54,12 +54,29 @@ test('dashboard sorting and summaries use registration and participant counts co
   });
 });
 
-test('CSV escapes formula-like user input and labels college as not collected', () => {
-  const record = registration('reg-1', participant('=2+3', '+student@example.com', '1st Year', ''));
+test('CSV exports exactly three headers and escapes formula-like user input', () => {
+  const record = registration('reg-1', {
+    fullName: 'Test Student',
+    email: 'test@example.com',
+    academicYear: '2nd Year',
+    rollNumber: '=2+3',
+    section: '+SEC-A',
+    phone: '9876543210',
+  });
+  record.idea.title = '@FormulaIdea';
+
   const csv = registrationsToCsv([record]);
 
-  assert.match(csv, /College \(not collected; proposed field\)/);
-  assert.match(csv, /"Not collected"/);
+  // Verify exactly three headers in the required order
+  assert.match(csv, /^﻿"Student Section","Student Roll Number","Startup Idea Title"/);
+
+  // Verify formula escaping
+  assert.match(csv, /"'\+SEC-A"/);
   assert.match(csv, /"'=2\+3"/);
-  assert.match(csv, /"'\+student@example\.com"/);
+  assert.match(csv, /"'@FormulaIdea"/);
+
+  // Verify excluded fields do NOT appear
+  assert.doesNotMatch(csv, /College/);
+  assert.doesNotMatch(csv, /Registration ID/);
+  assert.doesNotMatch(csv, /Academic Year/);
 });

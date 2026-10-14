@@ -1,5 +1,6 @@
-import { CircleUserRound, Menu, RefreshCw } from 'lucide-react';
+import { CircleUserRound, Menu, RefreshCw, LogOut } from 'lucide-react';
 import type { AdminView } from './AdminSidebar';
+import { logoutAdmin } from '@/services/adminAuth';
 
 interface AdminHeaderProps {
   activeView: AdminView;
@@ -48,12 +49,21 @@ function AdminHeader({ activeView, loading, onMenuClick, onRefresh }: AdminHeade
 
         <div className="ml-auto flex items-center gap-3 border-l border-gunmetal pl-4">
           <div className="hidden text-right sm:block">
-            <p className="text-xs font-semibold text-text-primary">Admin area</p>
-            <p className="font-mono text-[10px] uppercase tracking-wider text-yellow-400">Preview only</p>
+            <p className="text-xs font-semibold text-text-primary">Admin Terminal</p>
+            <p className="font-mono text-[10px] uppercase tracking-wider text-laser-cyan">Authorized</p>
           </div>
           <div className="flex h-9 w-9 items-center justify-center border border-laser-cyan/30 bg-laser-cyan/5 text-laser-cyan">
             <CircleUserRound className="h-5 w-5" aria-hidden="true" />
           </div>
+          <button
+            type="button"
+            onClick={() => void logoutAdmin()}
+            title="Sign out of admin session"
+            aria-label="Sign out"
+            className="inline-flex h-9 w-9 items-center justify-center border border-gunmetal text-text-secondary transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
 

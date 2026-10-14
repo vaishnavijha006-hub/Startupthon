@@ -125,7 +125,7 @@ function AdminDashboard() {
                 </div>
                 <button type="button" onClick={() => exportRegistrationsCsv(registrations)} disabled={loading || registrations.length === 0} className="inline-flex items-center justify-center gap-2 border border-laser-cyan/40 bg-laser-cyan/5 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-laser-cyan hover:bg-laser-cyan/10 disabled:cursor-not-allowed disabled:opacity-40"><Download className="h-4 w-4" />Export CSV</button>
               </div>
-              <p className="mb-3 text-xs text-text-secondary">CSV export contains the currently available frontend dataset. College is not collected by the current form and is marked as not collected.</p>
+              <p className="mb-3 text-xs text-text-secondary">CSV export includes Student Section, Student Roll Number, and Startup Idea Title for all registered participants.</p>
               {loading ? <div role="status" className="flex min-h-64 items-center justify-center border border-gunmetal bg-bg-secondary/30 text-sm text-text-secondary"><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Loading registrations…</div> : (
                 <RegistrationsTable rows={rows} currentPage={page} pageSize={PAGE_SIZE} sortField={sortField} sortDirection={sortDirection} onSort={chooseSort} onSelect={(row) => setSelectedRegistration(row.registration)} onPageChange={setPage} emptyTitle={emptyTitle} emptyMessage={emptyMessage} />
               )}

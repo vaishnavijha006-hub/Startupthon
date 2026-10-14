@@ -1,10 +1,15 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, AlertCircle, ChevronRight, Loader2, ShieldAlert } from 'lucide-react';
 import HudCorners from '@/components/ui/HudCorners';
 import { Logo } from '@/components/Logo';
+import { loginAdmin, useAdminAuth } from '@/services/adminAuth';
 
 function AdminLogin() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isAdmin, loading: authLoading } = useAdminAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -12,7 +17,15 @@ function AdminLogin() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // If already authenticated and authorized as an admin, redirect automatically
+  useEffect(() => {
+    if (!authLoading && user && isAdmin) {
+      const destination = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/admin/dashboard';
+      navigate(destination, { replace: true });
+    }
+  }, [user, isAdmin, authLoading, navigate, location]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
 
@@ -25,12 +38,27 @@ function AdminLogin() {
     setErrors(newErrors);
     if (Object.values(newErrors).some(Boolean)) return;
 
-    // Backend authentication not yet implemented
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      const result = await loginAdmin(email, password);
+      if (!result.success) {
+        setSubmitError(result.error || 'Authentication failed. Please verify your credentials.');
+        return;
+      }
+
+      if (!result.isAdmin) {
+        setSubmitError('Access Denied: Your account does not possess administrative privileges.');
+        return;
+      }
+
+      const destination = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/admin/dashboard';
+      navigate(destination, { replace: true });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred during sign in.';
+      setSubmitError(message);
+    } finally {
       setSubmitting(false);
-      setSubmitError('Admin authentication is not yet connected. Backend integration is required before login can function.');
-    }, 600);
+    }
   };
 
   return (
@@ -139,7 +167,7 @@ function AdminLogin() {
         </div>
 
         <p className="mt-4 text-center font-mono text-xs text-text-secondary">
-          Authentication backend pending. This interface is prepared for integration.
+          Protected by Supabase Authentication & Role-Based Access Control.
         </p>
       </div>
     </div>

@@ -1,42 +1,22 @@
 import type { DashboardRegistration } from '@/types';
 
-const CSV_HEADERS = [
-  'Registration ID',
-  'Student Name',
-  'Email',
-  'College (not collected; proposed field)',
-  'Academic Year',
-  'Roll Number',
-  'Section',
-  'Phone',
-  'Team Type',
-  'Idea Title',
-  'Idea Description',
-  'Domain',
-  'Prototype Available',
-  'Registration Date',
-];
+export const CSV_HEADERS = [
+  'Student Section',
+  'Student Roll Number',
+  'Startup Idea Title',
+] as const;
 
 export function registrationsToCsv(registrations: DashboardRegistration[]): string {
-  const rows: string[][] = [CSV_HEADERS];
+  const rows: string[][] = [[...CSV_HEADERS]];
 
   for (const registration of registrations) {
+    const ideaTitle = registration.idea?.title ?? '';
+
     for (const participant of registration.participants) {
       rows.push([
-        registration.id ?? '',
-        participant.fullName,
-        participant.email,
-        'Not collected',
-        participant.academicYear,
-        participant.rollNumber,
-        participant.section,
-        participant.phone,
-        registration.teamType,
-        registration.idea.title,
-        registration.idea.description,
-        registration.idea.domain,
-        registration.idea.prototypeAvailable === null ? '' : registration.idea.prototypeAvailable ? 'Yes' : 'No',
-        registration.createdAt ?? '',
+        participant.section ?? '',
+        participant.rollNumber ?? '',
+        ideaTitle,
       ]);
     }
   }
@@ -56,7 +36,9 @@ export function exportRegistrationsCsv(registrations: DashboardRegistration[]): 
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-function escapeCsvCell(value: string): string {
-  const safeValue = /^\s*[=+\-@]/.test(value) ? `'${value}` : value;
+export function escapeCsvCell(value: string): string {
+  const str = value == null ? '' : String(value);
+  // Protect against spreadsheet formula injection (=, +, -, @, tab, CR, even with leading whitespace)
+  const safeValue = /^[\s\t\r\n]*[=+\-@\t\r]/.test(str) ? `'${str}` : str;
   return `"${safeValue.replace(/"/g, '""')}"`;
 }
