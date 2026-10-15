@@ -117,3 +117,9 @@ The public website is available at [startupthon.vercel.app](https://startupthon.
 ## Contributing
 
 Create a focused branch, make a scoped change, run the relevant checks, and open a pull request for review.
+
+---
+
+## Made by
+
+**Vaishnavi** — [github.com/vaishnavijha006-hub](https://github.com/vaishnavijha006-hub)
