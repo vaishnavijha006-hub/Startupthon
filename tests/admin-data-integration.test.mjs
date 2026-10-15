@@ -187,40 +187,104 @@ test('pagination correctly slices rows', () => {
 test('CSV export exports exactly the three required columns in order', () => {
   const mapped = mapDatabaseToDashboardRegistrations(mockRawDatabaseRows);
   const csv = registrationsToCsv(mapped);
-
-  const lines = csv.trim().split(/\r\n|\n/);
+  const records = parseCsv(csv);
 
   // 1. Header assertion: starts with UTF-8 BOM, followed by exactly three required headers
   assert.ok(csv.startsWith('\uFEFF'), 'CSV should start with UTF-8 BOM');
-  assert.equal(lines[0], '"Student Section","Student Roll Number","Startup Idea Title"');
+  assert.deepEqual(records[0], ['Student Section', 'Student Roll Number', 'Startup Idea Title']);
 
   // 2. Row count: 1 header row + 1 solo row + 2 duo rows = 4 rows total
-  assert.equal(lines.length, 4);
+  assert.equal(records.length, 4);
 
   // 3. Exactly three fields per data row
-  for (let i = 1; i < lines.length; i++) {
-    // Each row is three quoted fields: "field1","field2","field3"
-    const fields = lines[i].split('","');
-    assert.equal(fields.length, 3, `Row ${i} should have exactly three fields`);
+  for (let i = 1; i < records.length; i++) {
+    assert.equal(records[i].length, 3, `Row ${i} should have exactly three fields`);
   }
 
   // 4. Solo registration: 1 row with section A, roll number, idea title
-  assert.equal(lines[1], '"A","2503330100134","Smart Solar Inverter"');
+  assert.deepEqual(records[1], ['A', '="2503330100134"', 'Smart Solar Inverter']);
 
   // 5. Duo registration: 2 rows with respective section/roll, both sharing idea title
-  assert.equal(lines[2], '"B","2403330100101","AI Health Companion"');
-  assert.equal(lines[3], '"C","","AI Health Companion"');
+  assert.deepEqual(records[2], ['B', '="2403330100101"', 'AI Health Companion']);
+  assert.deepEqual(records[3], ['C', '', 'AI Health Companion']);
 });
 
 test('CSV export separates solo (one row) and duo (two rows) correctly', () => {
   const soloOnly = mapDatabaseToDashboardRegistrations([mockRawDatabaseRows[0]]);
-  const soloCsv = registrationsToCsv(soloOnly).trim().split(/\r\n|\n/);
+  const soloCsv = parseCsv(registrationsToCsv(soloOnly));
   assert.equal(soloCsv.length, 2, 'Solo export must contain 1 header and exactly 1 data row');
 
   const duoOnly = mapDatabaseToDashboardRegistrations([mockRawDatabaseRows[1]]);
-  const duoCsv = registrationsToCsv(duoOnly).trim().split(/\r\n|\n/);
+  const duoCsv = parseCsv(registrationsToCsv(duoOnly));
   assert.equal(duoCsv.length, 3, 'Duo export must contain 1 header and exactly 2 data rows');
+  assert.deepEqual(duoCsv.slice(1).map((row) => row[1]), ['="2403330100101"', '']);
 });
+
+function parseCsv(csv) {
+  const input = csv.startsWith('\uFEFF') ? csv.slice(1) : csv;
+  const records = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+  let afterQuote = false;
+
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+    if (quoted) {
+      if (char === '"' && input[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (char === '"') {
+        quoted = false;
+        afterQuote = true;
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (afterQuote) {
+      if (char === ',') {
+        row.push(field);
+        field = '';
+        afterQuote = false;
+      } else if (char === '\r' || char === '\n') {
+        row.push(field);
+        records.push(row);
+        row = [];
+        field = '';
+        afterQuote = false;
+        if (char === '\r' && input[i + 1] === '\n') i++;
+      } else {
+        throw new Error(`Unexpected character after closing quote: ${char}`);
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      if (field.length !== 0) throw new Error('Quote found inside an unquoted CSV field');
+      quoted = true;
+    } else if (char === ',') {
+      row.push(field);
+      field = '';
+    } else if (char === '\r' || char === '\n') {
+      row.push(field);
+      records.push(row);
+      row = [];
+      field = '';
+      if (char === '\r' && input[i + 1] === '\n') i++;
+    } else {
+      field += char;
+    }
+  }
+
+  if (quoted) throw new Error('Unclosed quoted CSV field');
+  if (afterQuote || field.length > 0 || row.length > 0) {
+    row.push(field);
+    records.push(row);
+  }
+  return records;
+}
 
 test('CSV export safely handles commas, quotes, newlines, and formula injection', () => {
   const injectionData = [
