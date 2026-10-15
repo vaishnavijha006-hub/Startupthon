@@ -157,12 +157,12 @@ function RegistrationPage() {
       if (error) {
         if (error instanceof FunctionsHttpError) {
           let body: unknown;
-          if (error.context.status === 400) {
-            try {
-              body = await error.context.clone().json();
-            } catch {
-              // Keep the status-based message when the response is not JSON.
-            }
+          try {
+            // Always try to read the body — the edge function returns structured
+            // JSON errors for all status codes (400, 500, 503, etc.).
+            body = await error.context.clone().json();
+          } catch {
+            // Keep the status-based message when the response is not JSON.
           }
           setSubmitError(getRegistrationRequestErrorMessage({
             kind: 'http',

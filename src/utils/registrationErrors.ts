@@ -66,8 +66,19 @@ function getHttpErrorMessage(status: number, body: unknown): string {
   if (status === 429) {
     return 'Too many attempts. Please wait before trying again.';
   }
+  if (status === 503) {
+    // Could be sketch upload failure or service unavailable
+    const serverMsg = getServerErrorText(body);
+    if (serverMsg) return serverMsg;
+    return 'The registration service is temporarily unavailable. Please try again without a sketch, or try again later.';
+  }
   if (status >= 500) {
-    return `The registration service encountered a server error (HTTP ${status}). Please try again later.`;
+    // Check if it's a server configuration error (missing env vars in edge function)
+    const serverMsg = getServerErrorText(body);
+    if (serverMsg?.toLowerCase().includes('configuration')) {
+      return 'The registration service is not configured correctly. Please contact the event organizers.';
+    }
+    return `The registration service encountered a server error. Please try again later or contact the organizers.`;
   }
   return `The registration service rejected the request (HTTP ${status}). Please try again.`;
 }
