@@ -42,7 +42,7 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
       if (error.message.toLowerCase().includes('email not confirmed')) {
         return { success: false, error: 'Email address not confirmed. Please check your inbox.' };
       }
-      return { success: false, error: error.message || 'Authentication failed. Please try again.' };
+      return { success: false, error: 'Unable to sign in. Please try again or contact an administrator.' };
     }
 
     if (!data.user) {
@@ -50,13 +50,22 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
     }
 
     const isAdmin = isUserAdmin(data.user);
+    if (!isAdmin) {
+      // Do not leave an ordinary user's authenticated session active after an admin login attempt.
+      await supabase.auth.signOut({ scope: 'local' });
+      return {
+        success: false,
+        isAdmin: false,
+        error: 'This account does not have administrative privileges.',
+      };
+    }
+
     return {
       success: true,
-      isAdmin,
+      isAdmin: true,
     };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'An unexpected authentication error occurred.';
-    return { success: false, error: message };
+  } catch {
+    return { success: false, error: 'Unable to sign in. Please try again or contact an administrator.' };
   }
 }
 

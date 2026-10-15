@@ -145,3 +145,10 @@ test('AdminHeader.tsx provides sign out functionality', async () => {
   assert.match(headerSource, /logoutAdmin\(\)/);
   assert.match(headerSource, /Sign out of admin session/);
 });
+
+test('non-admin login attempts clear the authenticated session and avoid exposing provider errors', async () => {
+  const authSource = await readSource('../src/services/adminAuth.ts');
+  assert.match(authSource, /if \(!isAdmin\)\s*\{[\s\S]*?supabase\.auth\.signOut\(\{ scope: 'local' \}\)/);
+  assert.match(authSource, /Unable to sign in\. Please try again or contact an administrator\./);
+  assert.doesNotMatch(authSource, /error\.message \|\| 'Authentication failed/);
+});

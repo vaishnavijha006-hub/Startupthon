@@ -105,6 +105,20 @@ test('data mapping converts raw database records into typed dashboard models', (
   assert.equal(duo.idea.title, 'AI Health Companion');
 });
 
+test('maps persisted shortlist status and keeps the database UUID separate from display ID', () => {
+  const mapped = mapDatabaseToDashboardRegistrations([
+    { ...mockRawDatabaseRows[0], id: 'db-registration-uuid', registration_number: 42, shortlist_status: 'shortlisted' },
+    { ...mockRawDatabaseRows[1], id: 'db-registration-uuid-2', registration_number: 43, shortlist_status: 'rejected' },
+    { ...mockRawDatabaseRows[0], id: 'db-registration-uuid-3', registration_number: 44 },
+  ]);
+
+  assert.equal(mapped[0].databaseId, 'db-registration-uuid');
+  assert.equal(mapped[0].id, 'REG-#42');
+  assert.equal(mapped[0].shortlistStatus, 'shortlisted');
+  assert.equal(mapped[1].shortlistStatus, 'rejected');
+  assert.equal(mapped[2].shortlistStatus, 'pending');
+});
+
 test('solo and duo registration grouping preserves accurate registration counts', () => {
   const mapped = mapDatabaseToDashboardRegistrations(mockRawDatabaseRows);
   const summary = summarizeRegistrations(mapped);

@@ -25,7 +25,8 @@ function RegistrationConfirmation() {
   useEffect(() => {
     const stored = sessionStorage.getItem('pendingRegistration');
     if (stored) {
-      setData(JSON.parse(stored));
+      const parsed = JSON.parse(stored);
+      setData(parsed);
     }
     setLoading(false);
   }, []);
@@ -132,7 +133,7 @@ function RegistrationConfirmation() {
                       className="btn-laser btn-pressed focus-cyan group inline-flex items-center justify-center gap-2.5 border border-emerald-500/60 bg-emerald-500/15 px-7 py-3.5 font-display text-sm font-semibold uppercase tracking-wider text-emerald-300 transition-all hover:bg-emerald-500/25 hover:shadow-[0_0_24px_rgba(16,185,129,0.3)] clip-angular-sm"
                     >
                       <MessageCircle className="h-5 w-5" />
-                      Join WhatsApp Group
+                      Join Our Official WhatsApp Group
                       <ExternalLink className="h-4 w-4 opacity-60 transition-transform group-hover:translate-x-0.5" />
                     </a>
                     <p className="text-xs text-text-secondary/70">

@@ -31,6 +31,8 @@ export interface StartupIdea {
   domain: DomainId | '';
   prototypeAvailable: boolean | null;
   sketchFileName: string | null;
+  /** Private Supabase Storage object path; populated only in admin records. */
+  sketchFilePath?: string | null;
 }
 
 export interface Registration {
@@ -44,11 +46,14 @@ export interface Registration {
 
 /** Dashboard view of the submitted form, with optional metadata assigned by a future backend. */
 export interface DashboardRegistration {
+  /** Stable database UUID used for authorized administrative updates. */
+  databaseId?: string;
   id?: string;
   registrationNumber?: number;
   teamType: TeamType;
   participants: Participant[];
   idea: StartupIdea;
+  shortlistStatus: ShortlistStatus;
   createdAt?: string;
 }
 

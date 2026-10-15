@@ -53,9 +53,8 @@ function AdminLogin() {
 
       const destination = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/admin/dashboard';
       navigate(destination, { replace: true });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'An unexpected error occurred during sign in.';
-      setSubmitError(message);
+    } catch {
+      setSubmitError('Unable to sign in. Please try again or contact an administrator.');
     } finally {
       setSubmitting(false);
     }

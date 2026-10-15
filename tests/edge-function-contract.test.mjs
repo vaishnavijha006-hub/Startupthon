@@ -86,8 +86,9 @@ test('submit-registration 403 disallowed-origin response spreads corsHeaders', a
 test('submit-registration Edge Function enforces payload size limits and in-memory rate limiting', async () => {
   const code = await readSource('../supabase/functions/submit-registration/index.ts');
 
-  // Verify 64 KB payload boundary
-  assert.match(code, /MAX_BODY_BYTES\s*=\s*64\s*\*\s*1024/);
+  // JSON remains bounded; multipart bodies are capped by the 5 MB file limit plus overhead.
+  assert.match(code, /MAX_JSON_BYTES\s*=\s*64\s*\*\s*1024/);
+  assert.match(code, /MAX_FILE_BYTES\s*=\s*5\s*\*\s*1024\s*\*\s*1024/);
   assert.match(code, /Payload too large/);
   assert.match(code, /status:\s*413/);
 
@@ -95,6 +96,23 @@ test('submit-registration Edge Function enforces payload size limits and in-memo
   assert.match(code, /RATE_LIMIT_WINDOW_MS\s*=\s*60\s*\*\s*1000/);
   assert.match(code, /MAX_REQUESTS_PER_WINDOW\s*=\s*5/);
   assert.match(code, /status:\s*429/);
+});
+
+test('sketch upload uses bounded multipart validation and a private service-role bucket', async () => {
+  const code = await readSource('../supabase/functions/submit-registration/index.ts');
+  const migration = await readSource('../supabase/migrations/20261015000005_private_registration_sketch_storage.sql');
+  const registration = await readSource('../src/pages/RegistrationPage.tsx');
+  assert.match(code, /form\.get\('payload'\)/);
+  assert.match(code, /form\.get\('sketch'\)/);
+  assert.match(code, /image\/png/);
+  assert.match(code, /application\/pdf/);
+  assert.match(code, /const validatedSketchPath: string \| null = null/);
+  assert.match(code, /\.from\('registration-sketches'\)[\s\S]*?\.upload\(/);
+  assert.match(code, /adminClient\.storage\.from\('registration-sketches'\)\.remove/);
+  assert.match(migration, /public = false/);
+  assert.match(migration, /FOR SELECT\s+TO authenticated/);
+  assert.match(migration, /app_metadata/);
+  assert.match(registration, /form\.append\('sketch', sketchFile/);
 });
 
 test('submit-registration Edge Function secures service role credentials and prevents leak in responses', async () => {

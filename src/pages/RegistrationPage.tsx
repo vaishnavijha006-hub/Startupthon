@@ -143,9 +143,16 @@ function RegistrationPage() {
         },
       };
 
-      const { data, error } = await supabase.functions.invoke('submit-registration', {
-        body: payload,
-      });
+      const sketchFile = fileInputRef.current?.files?.[0];
+      const body = sketchFile
+        ? (() => {
+            const form = new FormData();
+            form.append('payload', JSON.stringify(payload));
+            form.append('sketch', sketchFile, sketchFile.name);
+            return form;
+          })()
+        : payload;
+      const { data, error } = await supabase.functions.invoke('submit-registration', { body });
 
       if (error) {
         if (error instanceof FunctionsHttpError) {

@@ -7,7 +7,7 @@ import {
   sortStudentRows,
   summarizeRegistrations,
 } from '../src/utils/adminDashboard.ts';
-import { registrationsToCsv } from '../src/utils/export.ts';
+import { registrationsToCsv, studentRowsToCsv } from '../src/utils/export.ts';
 
 const registration = (id, participant) => ({
   id,
@@ -21,7 +21,7 @@ const participant = (fullName, email, academicYear, rollNumber) => ({
   fullName, email, academicYear, rollNumber, section: 'A', phone: '9876543210',
 });
 
-test('dashboard rows search by name, email, and roll number and filter by academic year', () => {
+test('dashboard rows search across student and idea identifiers and filter by academic year', () => {
   const rows = flattenRegistrations([
     registration('reg-1', participant('Asha Rao', 'asha@example.com', '1st Year', '')),
     registration('reg-2', participant('Bala Das', 'bala@example.com', '2nd Year', '2503330100134')),
@@ -30,7 +30,21 @@ test('dashboard rows search by name, email, and roll number and filter by academ
   assert.equal(filterStudentRows(rows, 'asha', 'all').length, 1);
   assert.equal(filterStudentRows(rows, 'BALA@EXAMPLE.COM', 'all').length, 1);
   assert.equal(filterStudentRows(rows, '2503330100134', 'all').length, 1);
+  assert.equal(filterStudentRows(rows, 'reg-2', 'all').length, 1);
+  assert.equal(filterStudentRows(rows, 'idea', 'all').length, 2);
   assert.equal(filterStudentRows(rows, '', '2nd Year').length, 1);
+});
+
+test('dashboard filters by domain and shortlist status and CSV exports only matching students', () => {
+  const first = registration('REG-#1', participant('Asha Rao', 'asha@example.com', '1st Year', '1'));
+  const second = registration('REG-#2', participant('Bala Das', 'bala@example.com', '2nd Year', '2'));
+  first.shortlistStatus = 'shortlisted';
+  second.shortlistStatus = 'pending';
+  second.idea.domain = 'healthcare';
+  const rows = flattenRegistrations([first, second]);
+  const filtered = filterStudentRows(rows, '', 'all', 'healthcare', 'pending');
+  assert.deepEqual(filtered.map(({ participant: item }) => item.fullName), ['Bala Das']);
+  assert.equal(studentRowsToCsv(filtered).trim().split(/\r\n|\n/).length, 2);
 });
 
 test('dashboard sorting and summaries use registration and participant counts correctly', () => {

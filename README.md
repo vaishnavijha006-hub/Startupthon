@@ -4,7 +4,7 @@
 
 Students can register individually or as a team and submit a startup idea. Submissions are reviewed, and selected students or teams may be invited to present their ideas to a panel.
 
-> **Project status:** The website is currently frontend-only. Registration forms and calls to action are not connected to a backend or database. Supabase is the planned backend and has not yet been integrated. The admin dashboard is a frontend preview and does not provide real authentication or registration data.
+> **Project status:** This branch includes Supabase-backed registration, admin authentication and data access, shortlist updates, and private sketch uploads. A successful local build does not verify the live Supabase project; apply and verify the migrations and Edge Function configuration before production use.
 
 ## Event overview
 
@@ -30,7 +30,8 @@ Students do not need a fully developed product to participate. An interesting id
 - Public event and startup pitch information.
 - Registration for individuals and teams, including participant and idea details.
 - Physical certificate announcement for successfully registered participants, subject to the event's certificate distribution process.
-- Admin login and dashboard frontend previews; authentication and registration data access are not connected.
+- Supabase-backed admin login and database dashboard, protected by server-controlled admin claims and RLS policies.
+- Optional sketch upload to a private Supabase Storage bucket, with admin-only signed access.
 - Responsive layouts for desktop, tablet, and mobile.
 
 ## Tech stack
@@ -43,7 +44,7 @@ Students do not need a fully developed product to participate. An interesting id
 | Styling | Tailwind CSS |
 | Icons | Lucide React |
 | Routing | React Router |
-| Planned backend | Supabase (not integrated yet) |
+| Backend | Supabase Auth, Postgres, Edge Functions, and private Storage |
 
 ## Getting started
 
@@ -55,7 +56,7 @@ Students do not need a fully developed product to participate. An interesting id
 ### Run locally
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/vaishnavijha006-hub/Startupthon
 cd Startupthon
 npm install
 npm run dev
@@ -87,14 +88,20 @@ tests/                # Node.js tests for validation and frontend behavior
 
 ## Deployment
 
-The public site is hosted at [codezy-startup-pitch-x0kr.bolt.host](https://codezy-startup-pitch-x0kr.bolt.host/). Build the project with `npm run build` and deploy the generated `dist/` directory to another static host if needed.
+The original public site is hosted on Bolt:
+
+- [Live website](https://codezy-startup-pitch-x0kr.bolt.host/)
+- [Registration](https://codezy-startup-pitch-x0kr.bolt.host/register)
+- [Admin login](https://codezy-startup-pitch-x0kr.bolt.host/admin/login)
+- [Admin dashboard](https://codezy-startup-pitch-x0kr.bolt.host/admin/dashboard) (frontend preview; not secured)
+
+The Vercel Preview is connected to this repository branch. Production registration, admin access, storage, and migration state still require verification against the live Supabase project. Do not treat a successful frontend build as proof of live functionality. Build the project with `npm run build` and deploy the generated `dist/` directory to a static host.
 
 ## Roadmap
 
-- Connect registration submission and storage to the planned Supabase backend.
-- Implement real admin authentication and authorization.
-- Add server-side validation and registration data access.
-- Connect file storage for uploaded sketches.
+- Verify migrations, RLS, Edge Function secrets, Preview CORS, and real registration submission in Supabase.
+- Verify administrator claims and authorization against the live project.
+- Verify private sketch bucket policies and signed admin access against the live project.
 - Add analytics and continue improving accessibility and SEO.
 
 ## Contributing

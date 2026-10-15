@@ -1,4 +1,5 @@
 import type { DashboardRegistration } from '@/types';
+import type { StudentRegistrationRow } from './adminDashboard';
 
 export const CSV_HEADERS = [
   'Student Section',
@@ -25,7 +26,24 @@ export function registrationsToCsv(registrations: DashboardRegistration[]): stri
 }
 
 export function exportRegistrationsCsv(registrations: DashboardRegistration[]): void {
-  const blob = new Blob([registrationsToCsv(registrations)], { type: 'text/csv;charset=utf-8;' });
+  downloadCsv(registrationsToCsv(registrations));
+}
+
+export function studentRowsToCsv(rows: StudentRegistrationRow[]): string {
+  const data = rows.map(({ registration, participant }) => [
+    participant.section ?? '',
+    participant.rollNumber ?? '',
+    registration.idea?.title ?? '',
+  ]);
+  return `\uFEFF${[[...CSV_HEADERS], ...data].map((row) => row.map(escapeCsvCell).join(',')).join('\r\n')}`;
+}
+
+export function exportStudentRowsCsv(rows: StudentRegistrationRow[]): void {
+  downloadCsv(studentRowsToCsv(rows));
+}
+
+function downloadCsv(csv: string): void {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

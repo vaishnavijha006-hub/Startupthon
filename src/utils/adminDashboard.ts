@@ -1,6 +1,8 @@
 import type { DashboardRegistration, Participant } from '@/types';
 
 export type AcademicYearFilter = 'all' | '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
+export type DomainFilter = 'all' | 'ai' | 'healthcare' | 'environment' | 'fintech' | 'other';
+export type ReviewStatusFilter = 'all' | 'pending' | 'shortlisted' | 'rejected';
 export type StudentSortField = 'name' | 'academicYear' | 'rollNumber' | 'registeredAt';
 export type SortDirection = 'asc' | 'desc';
 
@@ -31,12 +33,16 @@ export function filterStudentRows(
   rows: StudentRegistrationRow[],
   searchQuery: string,
   academicYear: AcademicYearFilter,
+  domain: DomainFilter = 'all',
+  reviewStatus: ReviewStatusFilter = 'all',
 ): StudentRegistrationRow[] {
   const query = searchQuery.trim().toLocaleLowerCase();
-  return rows.filter(({ participant }) => {
+  return rows.filter(({ participant, registration }) => {
     if (academicYear !== 'all' && participant.academicYear !== academicYear) return false;
+    if (domain !== 'all' && registration.idea.domain !== domain) return false;
+    if (reviewStatus !== 'all' && registration.shortlistStatus !== reviewStatus) return false;
     if (!query) return true;
-    return [participant.fullName, participant.email, participant.rollNumber]
+    return [participant.fullName, participant.email, participant.rollNumber, registration.id ?? '', registration.idea.title]
       .some((value) => value.toLocaleLowerCase().includes(query));
   });
 }

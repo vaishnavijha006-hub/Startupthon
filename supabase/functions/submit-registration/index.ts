@@ -109,7 +109,9 @@ function checkRateLimit(ip: string): boolean {
 // -----------------------------------------------------------------------------
 // 3. MAXIMUM BODY SIZE
 // -----------------------------------------------------------------------------
-const MAX_BODY_BYTES = 64 * 1024; // 64 KB
+const MAX_JSON_BYTES = 64 * 1024;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_BODY_BYTES = MAX_FILE_BYTES + MAX_JSON_BYTES + 32 * 1024;
 
 // -----------------------------------------------------------------------------
 // 4. MAIN EDGE FUNCTION HANDLER
@@ -183,13 +185,15 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // D. Enforce Content-Type header (application/json)
+  // D. Accept JSON or a bounded multipart body containing JSON plus one sketch.
   const contentType = req.headers.get('content-type') || '';
-  if (!contentType.toLowerCase().includes('application/json')) {
+  const isMultipart = contentType.toLowerCase().startsWith('multipart/form-data;');
+  const isJson = contentType.toLowerCase().includes('application/json');
+  if (!isJson && !isMultipart) {
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'Invalid Content-Type. Request body must be application/json.',
+        error: 'Invalid Content-Type. Request body must be JSON or multipart form data.',
       }),
       {
         status: 415,
@@ -201,13 +205,13 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // E. Enforce 64 KB maximum payload size (header check + streaming check)
+  // E. Bound the full request while streaming it into memory.
   const contentLength = req.headers.get('content-length');
-  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+  if (contentLength && Number(contentLength) > (isMultipart ? MAX_BODY_BYTES : MAX_JSON_BYTES)) {
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'Payload too large. Maximum request body size is 64 KB.',
+        error: isMultipart ? 'Payload too large. Sketch files must be 5 MB or smaller.' : 'Payload too large. Maximum JSON payload size is 64 KB.',
       }),
       {
         status: 413,
@@ -236,9 +240,8 @@ Deno.serve(async (req: Request) => {
   }
 
   // Safely read body stream up to MAX_BODY_BYTES to prevent memory exhaustion
-  let rawText = '';
+  const chunks: Uint8Array[] = [];
   const reader = req.body.getReader();
-  const decoder = new TextDecoder();
   let totalBytes = 0;
 
   try {
@@ -247,12 +250,12 @@ Deno.serve(async (req: Request) => {
       if (done) break;
 
       totalBytes += value.byteLength;
-      if (totalBytes > MAX_BODY_BYTES) {
+      if (totalBytes > (isMultipart ? MAX_BODY_BYTES : MAX_JSON_BYTES)) {
         await reader.cancel();
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Payload too large. Maximum request body size is 64 KB.',
+            error: isMultipart ? 'Payload too large. Sketch files must be 5 MB or smaller.' : 'Payload too large. Maximum JSON payload size is 64 KB.',
           }),
           {
             status: 413,
@@ -263,9 +266,8 @@ Deno.serve(async (req: Request) => {
           }
         );
       }
-      rawText += decoder.decode(value, { stream: true });
+      chunks.push(value);
     }
-    rawText += decoder.decode();
   } catch {
     return new Response(
       JSON.stringify({
@@ -282,10 +284,30 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // F. Parse JSON body
+  const requestBytes = new Uint8Array(totalBytes);
+  let requestOffset = 0;
+  for (const chunk of chunks) {
+    requestBytes.set(chunk, requestOffset);
+    requestOffset += chunk.byteLength;
+  }
+
+  // F. Parse JSON body or multipart payload.
   let body: Record<string, unknown>;
+  let sketchFile: File | null = null;
+  let sketchExtension: string | null = null;
   try {
-    body = JSON.parse(rawText);
+    if (isMultipart) {
+      const parsedRequest = new Request(req.url, { method: 'POST', headers: req.headers, body: requestBytes });
+      const form = await parsedRequest.formData();
+      const payload = form.get('payload');
+      const sketch = form.get('sketch');
+      if (typeof payload !== 'string' || payload.length > MAX_JSON_BYTES) throw new Error('Invalid payload');
+      if (sketch !== null && !(sketch instanceof File)) throw new Error('Invalid sketch');
+      body = JSON.parse(payload);
+      sketchFile = sketch instanceof File ? sketch : null;
+    } else {
+      body = JSON.parse(new TextDecoder().decode(requestBytes));
+    }
   } catch {
     return new Response(
       JSON.stringify({
@@ -300,6 +322,35 @@ Deno.serve(async (req: Request) => {
         },
       }
     );
+  }
+
+  if (sketchFile) {
+    const allowedTypes: Record<string, string> = {
+      'image/png': 'png',
+      'image/jpeg': 'jpg',
+      'image/webp': 'webp',
+      'application/pdf': 'pdf',
+    };
+    const extension = allowedTypes[sketchFile.type];
+    if (!extension || sketchFile.size === 0 || sketchFile.size > MAX_FILE_BYTES) {
+      return new Response(JSON.stringify({ success: false, error: 'Sketch must be a PNG, JPEG, WebP, or PDF file up to 5 MB.' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const signature = new Uint8Array(await sketchFile.slice(0, 12).arrayBuffer());
+    const isValidSignature = extension === 'png'
+      ? signature.length >= 8 && [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => signature[index] === byte)
+      : extension === 'jpg'
+        ? signature.length >= 3 && signature[0] === 255 && signature[1] === 216 && signature[2] === 255
+        : extension === 'webp'
+          ? signature.length >= 12 && new TextDecoder().decode(signature.slice(0, 4)) === 'RIFF' && new TextDecoder().decode(signature.slice(8, 12)) === 'WEBP'
+          : new TextDecoder().decode(signature.slice(0, 5)) === '%PDF-';
+    if (!isValidSignature) {
+      return new Response(JSON.stringify({ success: false, error: 'The uploaded sketch file is not a valid file of the selected type.' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    sketchExtension = extension;
   }
 
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -443,10 +494,8 @@ Deno.serve(async (req: Request) => {
   // H. Construct sanitized payload matching public.submit_registration_internal(JSONB)
   // Notice: sketchFilePath is set only when an actual non-empty path is provided.
   // We do not fall back to sketchFileName or claim an upload occurred.
-  const validatedSketchPath =
-    typeof ideaObj?.sketchFilePath === 'string' && ideaObj.sketchFilePath.trim().length > 0
-      ? ideaObj.sketchFilePath.trim()
-      : null;
+  // Clients cannot choose a storage path; it is assigned only after a verified upload.
+  const validatedSketchPath: string | null = null;
 
   const participantsList = Array.isArray(body.participants)
     ? (body.participants as Array<Record<string, unknown>>)
@@ -493,6 +542,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // J. Invoke the restricted internal RPC using the privileged service-role client
+  let uploadedSketchPath: string | null = null;
   try {
     const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
@@ -501,11 +551,27 @@ Deno.serve(async (req: Request) => {
       },
     });
 
+    if (sketchFile) {
+      const objectPath = `${crypto.randomUUID()}.${sketchExtension}`;
+      const { error: uploadError } = await adminClient.storage
+        .from('registration-sketches')
+        .upload(objectPath, sketchFile, { contentType: sketchFile.type, upsert: false });
+      if (uploadError) {
+        console.error('Sketch upload failed:', uploadError.name);
+        return new Response(JSON.stringify({ success: false, error: 'Sketch upload failed. Please try again or submit without a sketch.' }), {
+          status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      uploadedSketchPath = objectPath;
+      sanitizedPayload.idea.sketchFilePath = objectPath;
+    }
+
     const { data, error } = await adminClient.rpc('submit_registration_internal', {
       p_payload: sanitizedPayload,
     });
 
     if (error) {
+      if (uploadedSketchPath) await adminClient.storage.from('registration-sketches').remove([uploadedSketchPath]);
       // Log diagnostic details securely on server console
       console.error('RPC submission error:', {
         code: error.code,
@@ -560,6 +626,10 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (err: unknown) {
+    if (uploadedSketchPath) {
+      const cleanupClient = createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
+      await cleanupClient.storage.from('registration-sketches').remove([uploadedSketchPath]).catch(() => undefined);
+    }
     const errMessage = err instanceof Error ? err.message : 'Unknown exception';
     console.error('Unexpected exception during registration submission:', errMessage);
 
