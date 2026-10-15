@@ -10,6 +10,7 @@ test('submit-registration Edge Function enforces strict CORS allowlist and handl
   // Verify default allowed origins contain the local dev ports and production bolt host
   assert.match(code, /'http:\/\/localhost:5173'/);
   assert.match(code, /'http:\/\/127\.0\.0\.1:5173'/);
+  assert.match(code, /'http:\/\/localhost:5174'/);
   assert.match(code, /'http:\/\/localhost:3000'/);
   assert.match(code, /'https:\/\/codezy-startup-pitch-x0kr\.bolt\.host'/);
 

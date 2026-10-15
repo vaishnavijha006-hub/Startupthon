@@ -16,6 +16,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 const DEFAULT_ALLOWED_ORIGINS = new Set([
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'http://localhost:5174',
   'http://localhost:3000',
   'https://codezy-startup-pitch-x0kr.bolt.host',
   'https://startupthon.vercel.app',
