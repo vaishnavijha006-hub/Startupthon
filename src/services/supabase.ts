@@ -6,9 +6,7 @@ const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.met
 const supabaseUrl = env.VITE_SUPABASE_URL || '';
 const supabasePublishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
-
-if (!isSupabaseConfigured) {
+if (!supabaseUrl || !supabasePublishableKey) {
   if (globalEnv?.NODE_ENV !== 'test') {
     console.warn('Supabase environment variables missing. Please check your .env file.');
   }

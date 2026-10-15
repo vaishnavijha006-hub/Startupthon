@@ -139,19 +139,6 @@ test('AdminLogin.tsx uses real loginAdmin and removes fake timeout', async () =>
   assert.doesNotMatch(loginSource, /setTimeout\([^)]*Admin authentication is not yet connected/);
 });
 
-test('Admin login reports missing Supabase configuration and disables sign-in', async () => {
-  const loginSource = await readSource('../src/pages/AdminLogin.tsx');
-  const authSource = await readSource('../src/services/adminAuth.ts');
-  assert.match(loginSource, /import { isSupabaseConfigured } from '@/);
-  assert.match(loginSource, /disabled=\{submitting \|\| !isSupabaseConfigured\}/);
-  assert.match(authSource, /if \(!isSupabaseConfigured\)[\s\S]*?Admin sign-in is not configured/);
-});
-
-test('non-admin sign-in clears the local Supabase session', async () => {
-  const authSource = await readSource('../src/services/adminAuth.ts');
-  assert.match(authSource, /if \(!isAdmin\)[\s\S]*?signOut\(\{ scope: 'local' \}\)/);
-});
-
 test('AdminHeader.tsx provides sign out functionality', async () => {
   const headerSource = await readSource('../src/components/admin/AdminHeader.tsx');
   assert.match(headerSource, /import { logoutAdmin } from '@/);

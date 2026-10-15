@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
-import { isSupabaseConfigured, supabase } from './supabase.ts';
+import { supabase } from './supabase.ts';
 
 /**
  * Checks whether a given Supabase user possesses authorized administrative privileges.
@@ -28,13 +28,6 @@ export interface AdminLoginResult {
  * Authenticates an administrator via Supabase Auth and validates administrative privileges.
  */
 export async function loginAdmin(email: string, password: string): Promise<AdminLoginResult> {
-  if (!isSupabaseConfigured) {
-    return {
-      success: false,
-      error: 'Admin sign-in is not configured for this site. Configure the Supabase URL and publishable key, then rebuild and redeploy.',
-    };
-  }
-
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
@@ -49,7 +42,7 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
       if (error.message.toLowerCase().includes('email not confirmed')) {
         return { success: false, error: 'Email address not confirmed. Please check your inbox.' };
       }
-      return { success: false, error: 'Unable to sign in. Check your credentials and connection, then try again.' };
+      return { success: false, error: error.message || 'Authentication failed. Please try again.' };
     }
 
     if (!data.user) {
@@ -57,17 +50,13 @@ export async function loginAdmin(email: string, password: string): Promise<Admin
     }
 
     const isAdmin = isUserAdmin(data.user);
-    if (!isAdmin) {
-      // Do not leave ordinary users with a persistent session after an admin login attempt.
-      await supabase.auth.signOut({ scope: 'local' });
-    }
-
     return {
       success: true,
       isAdmin,
     };
-  } catch {
-    return { success: false, error: 'Unable to reach the authentication service. Please try again later.' };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An unexpected authentication error occurred.';
+    return { success: false, error: message };
   }
 }
 
@@ -101,13 +90,6 @@ export function useAdminAuth(): AdminAuthState {
 
   useEffect(() => {
     let mounted = true;
-
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      return () => {
-        mounted = false;
-      };
-    }
 
     // 1. Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {

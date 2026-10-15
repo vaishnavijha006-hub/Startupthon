@@ -4,7 +4,6 @@ import { Eye, EyeOff, Lock, Mail, AlertCircle, ChevronRight, Loader2, ShieldAler
 import HudCorners from '@/components/ui/HudCorners';
 import { Logo } from '@/components/Logo';
 import { loginAdmin, useAdminAuth } from '@/services/adminAuth';
-import { isSupabaseConfigured } from '@/services/supabase';
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -139,15 +138,6 @@ function AdminLogin() {
             </div>
 
             {/* Submit error */}
-            {!isSupabaseConfigured && (
-              <div role="alert" className="flex items-start gap-3 border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
-                <ShieldAlert className="h-5 w-5 shrink-0 text-yellow-400" />
-                <span className="text-sm text-yellow-200">
-                  Admin sign-in is not configured for this site. Add the Supabase URL and publishable key to the deployment environment, then rebuild and redeploy.
-                </span>
-              </div>
-            )}
-
             {submitError && (
               <div className="flex items-start gap-3 border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
                 <ShieldAlert className="h-5 w-5 shrink-0 text-yellow-400" />
@@ -158,7 +148,7 @@ function AdminLogin() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={submitting || !isSupabaseConfigured}
+              disabled={submitting}
               className="btn-laser flex w-full items-center justify-center gap-2 border border-laser-cyan/50 bg-laser-cyan/10 px-6 py-3 font-display text-base font-semibold uppercase tracking-wider text-laser-cyan transition-all hover:bg-laser-cyan/20 hover:shadow-[0_0_24px_rgba(0,229,255,0.3)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? (
