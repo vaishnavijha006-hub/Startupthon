@@ -351,10 +351,12 @@ function RegistrationPage() {
                   label="Phone Number"
                   required
                   type="tel"
+                  inputMode="numeric"
                   value={participant.phone}
                   onChange={(v) => updateParticipant(index, 'phone', v)}
                   error={errors?.participants[index]?.phone}
-                  placeholder="+91 98765 43210"
+                  placeholder="98765 43210"
+                  hint="Enter exactly 10-digit mobile number"
                 />
                 <FormField
                   label="Email Address"

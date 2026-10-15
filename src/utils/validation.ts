@@ -15,10 +15,12 @@ export function validateEmail(email: string): boolean {
 
 export function validatePhone(phone: string): boolean {
   const normalized = phone.trim();
-  if (!/^[+]?[0-9 -]{10,25}$/.test(normalized)) return false;
-
-  const digitCount = normalized.replace(/[^0-9]/g, '').length;
-  return digitCount >= 10 && digitCount <= 15;
+  // Strip optional +91 or 0 country/trunk prefix, then spaces and dashes
+  const digitsOnly = normalized
+    .replace(/^\+91/, '')    // remove +91
+    .replace(/^0/, '')       // remove leading 0
+    .replace(/[\s-]/g, ''); // remove spaces and dashes
+  return /^\d{10}$/.test(digitsOnly);
 }
 
 const ROLL_NUMBER_RULES: Record<string, { prefix?: string; required: boolean }> = {
@@ -62,7 +64,7 @@ export function validateParticipant(p: Participant): ParticipantErrors {
   if (rollNumberError) errors.rollNumber = rollNumberError;
 
   if (!p.phone.trim()) errors.phone = 'Phone number is required';
-  else if (!validatePhone(p.phone)) errors.phone = 'Enter a valid phone number (10-15 digits)';
+  else if (!validatePhone(p.phone)) errors.phone = 'Phone number must be exactly 10 digits';
 
   if (!p.email.trim()) errors.email = 'Email address is required';
   else if (!validateEmail(p.email)) errors.email = 'Enter a valid email address';
