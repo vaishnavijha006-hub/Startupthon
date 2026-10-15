@@ -18,6 +18,7 @@ const DEFAULT_ALLOWED_ORIGINS = new Set([
   'http://127.0.0.1:5173',
   'http://localhost:3000',
   'https://codezy-startup-pitch-x0kr.bolt.host',
+  'https://startupthon.vercel.app',
 ]);
 
 function isOriginAllowed(origin: string | null): boolean {
@@ -113,8 +114,20 @@ const MAX_BODY_BYTES = 64 * 1024; // 64 KB
 // -----------------------------------------------------------------------------
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get('Origin');
+  const corsHeaders = buildCorsHeaders(origin);
 
-  // Handle browser CORS security: reject disallowed origins
+  // A. Handle CORS preflight (OPTIONS) — must come first so browsers always
+  // receive a well-formed preflight response regardless of whether the origin
+  // is allowed. For disallowed origins, corsHeaders will omit
+  // Access-Control-Allow-Origin and the browser will block the actual request.
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }
+
+  // Handle browser CORS security: reject disallowed origins on non-preflight requests
   if (origin && !isOriginAllowed(origin)) {
     return new Response(
       JSON.stringify({
@@ -124,20 +137,11 @@ Deno.serve(async (req: Request) => {
       {
         status: 403,
         headers: {
+          ...corsHeaders,
           'Content-Type': 'application/json',
         },
       }
     );
-  }
-
-  const corsHeaders = buildCorsHeaders(origin);
-
-  // A. Handle CORS preflight (OPTIONS)
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders,
-    });
   }
 
   // B. Enforce HTTP method (POST only)

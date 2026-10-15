@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="rocket" x1="16" y1="4" x2="16" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0d7ff"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <rect width="32" height="32" rx="8" fill="url(#bg)"/>
+  <!-- Rocket body -->
+  <path d="M16 4 C16 4 22 10 22 17 L16 21 L10 17 C10 10 16 4 16 4 Z" fill="url(#rocket)"/>
+  <!-- Rocket window -->
+  <circle cx="16" cy="14" r="2.5" fill="#6366f1"/>
+  <!-- Rocket fins -->
+  <path d="M10 17 L7 22 L11 20 Z" fill="#c4b5fd"/>
+  <path d="M22 17 L25 22 L21 20 Z" fill="#c4b5fd"/>
+  <!-- Exhaust flame -->
+  <ellipse cx="16" cy="23" rx="2" ry="3" fill="#f97316" opacity="0.9"/>
+  <ellipse cx="16" cy="24" rx="1.2" ry="2" fill="#fbbf24" opacity="0.9"/>
+</svg>
