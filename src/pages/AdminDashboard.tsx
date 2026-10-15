@@ -38,7 +38,6 @@ function AdminDashboard() {
   const [selectedRegistration, setSelectedRegistration] = useState<DashboardRegistration | null>(null);
   const [shortlistSaving, setShortlistSaving] = useState(false);
   const [shortlistError, setShortlistError] = useState<string | null>(null);
-  const [noShortlistedMsg, setNoShortlistedMsg] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -76,10 +75,15 @@ function AdminDashboard() {
   };
 
   const registrations = dataset?.status === 'available' ? dataset.registrations : EMPTY_REGISTRATIONS;
+  const allStudentRows = useMemo(() => flattenRegistrations(registrations), [registrations]);
+  const shortlistedRows = useMemo(
+    () => allStudentRows.filter(({ registration }) => registration.shortlistStatus === 'shortlisted'),
+    [allStudentRows],
+  );
   const rows = useMemo(() => {
-    const filtered = filterStudentRows(flattenRegistrations(registrations), query, year, domain, reviewStatus);
+    const filtered = filterStudentRows(allStudentRows, query, year, domain, reviewStatus);
     return sortStudentRows(filtered, sortField, sortDirection);
-  }, [registrations, query, year, domain, reviewStatus, sortField, sortDirection]);
+  }, [allStudentRows, query, year, domain, reviewStatus, sortField, sortDirection]);
   const summary = useMemo(() => summarizeRegistrations(registrations), [registrations]);
 
   const chooseSort = (field: StudentSortField) => {
@@ -89,6 +93,7 @@ function AdminDashboard() {
   };
 
   const unavailable = dataset?.status === 'unavailable';
+  const canExportData = !loading && !loadError && dataset?.status === 'available';
   const hasFilters = Boolean(query) || year !== 'all' || domain !== 'all' || reviewStatus !== 'all';
   const emptyTitle = loadError ? 'Could not load registrations' : unavailable ? 'Registration data unavailable' : hasFilters ? 'No matching students' : 'No registrations yet';
   const emptyMessage = loadError
@@ -162,15 +167,17 @@ function AdminDashboard() {
                   </label>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <button type="button" onClick={() => exportStudentRowsCsv(rows)} disabled={loading || rows.length === 0} className="inline-flex items-center justify-center gap-2 border border-laser-cyan/40 bg-laser-cyan/5 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-laser-cyan hover:bg-laser-cyan/10 disabled:cursor-not-allowed disabled:opacity-40"><Download className="h-4 w-4" />Export All Students CSV</button>
-                  <button type="button" onClick={() => { setNoShortlistedMsg(false); const count = exportShortlistedStudentRowsCsv(rows); if (count === 0) setNoShortlistedMsg(true); }} disabled={loading || rows.length === 0} className="inline-flex items-center justify-center gap-2 border border-green-400/40 bg-green-400/5 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-green-400 hover:bg-green-400/10 disabled:cursor-not-allowed disabled:opacity-40"><Download className="h-4 w-4" />Export Shortlisted Students CSV</button>
+                  <button type="button" onClick={() => exportStudentRowsCsv(allStudentRows)} disabled={!canExportData || allStudentRows.length === 0} className="inline-flex items-center justify-center gap-2 border border-laser-cyan/40 bg-laser-cyan/5 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-laser-cyan hover:bg-laser-cyan/10 disabled:cursor-not-allowed disabled:opacity-40"><Download className="h-4 w-4" />Export All Students CSV</button>
+                  <button type="button" onClick={() => exportShortlistedStudentRowsCsv(allStudentRows)} disabled={!canExportData || shortlistedRows.length === 0} className="inline-flex items-center justify-center gap-2 border border-green-400/40 bg-green-400/5 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-green-400 hover:bg-green-400/10 disabled:cursor-not-allowed disabled:opacity-40"><Download className="h-4 w-4" />Export Shortlisted Students CSV</button>
                 </div>
               </div>
-              {noShortlistedMsg && (
+              {canExportData && allStudentRows.length === 0 && (
+                <p role="status" className="mb-3 border border-yellow-500/20 bg-yellow-500/5 px-4 py-2.5 text-xs text-yellow-100">No student registrations are available to export yet.</p>
+              )}
+              {canExportData && allStudentRows.length > 0 && shortlistedRows.length === 0 && (
                 <div role="status" className="mb-3 flex items-center gap-2 border border-yellow-500/20 bg-yellow-500/5 px-4 py-2.5 text-xs text-yellow-100">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  No shortlisted students found. Change a student's review status to "Shortlisted" before exporting.
-                  <button type="button" onClick={() => setNoShortlistedMsg(false)} className="ml-auto text-yellow-100/70 hover:text-yellow-100">✕</button>
+                  No shortlisted students are available to export. Shortlist a registration to enable this export.
                 </div>
               )}
               <p className="mb-3 text-xs text-text-secondary">CSV exports include the matching participant records with three columns: Student Section, Student Roll Number, and Startup Idea Title. Long roll numbers are formatted for Excel compatibility.</p>

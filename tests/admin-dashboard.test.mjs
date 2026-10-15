@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   filterStudentRows,
   flattenRegistrations,
@@ -93,4 +94,20 @@ test('CSV exports exactly three headers and escapes formula-like user input', ()
   assert.doesNotMatch(csv, /College/);
   assert.doesNotMatch(csv, /Registration ID/);
   assert.doesNotMatch(csv, /Academic Year/);
+});
+
+test('dashboard exports the full available dataset and gates actions on successful loading', async () => {
+  const dashboard = await readFile(new URL('../src/pages/AdminDashboard.tsx', import.meta.url), 'utf8');
+
+  assert.match(dashboard, /setDataset\(await loadAdminRegistrations\(\)\)/, 'Dashboard data comes from the registration service');
+  assert.match(dashboard, /const registrations = dataset\?\.status === 'available' \? dataset\.registrations : EMPTY_REGISTRATIONS/);
+  assert.match(dashboard, /const allStudentRows = useMemo\(\(\) => flattenRegistrations\(registrations\)/);
+  assert.match(dashboard, /exportStudentRowsCsv\(allStudentRows\)/);
+  assert.match(dashboard, /exportShortlistedStudentRowsCsv\(allStudentRows\)/);
+  assert.match(dashboard, /registration\.shortlistStatus === 'shortlisted'/);
+  assert.match(dashboard, /disabled=\{!canExportData \|\| allStudentRows\.length === 0\}/);
+  assert.match(dashboard, /disabled=\{!canExportData \|\| shortlistedRows\.length === 0\}/);
+  assert.match(dashboard, /canExportData && allStudentRows\.length === 0/);
+  assert.match(dashboard, /canExportData && allStudentRows\.length > 0 && shortlistedRows\.length === 0/);
+  assert.match(dashboard, /const canExportData = !loading && !loadError && dataset\?\.status === 'available'/);
 });

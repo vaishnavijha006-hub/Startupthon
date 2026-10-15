@@ -4,8 +4,42 @@ import {
   registrationsToCsv,
   studentRowsToCsv,
   escapeCsvCell,
+  exportStudentRowsCsv,
+  exportShortlistedStudentRowsCsv,
 } from '../src/utils/export.ts';
 import { flattenRegistrations } from '../src/utils/adminDashboard.ts';
+import { parseCsv } from './helpers/parse-csv.mjs';
+
+const EXPECTED_HEADERS = ['Student Section', 'Student Roll Number', 'Startup Idea Title'];
+
+async function captureCsvDownload(exportAction) {
+  const originalDocument = globalThis.document;
+  const originalWindow = globalThis.window;
+  const originalCreateObjectUrl = URL.createObjectURL;
+  const originalRevokeObjectUrl = URL.revokeObjectURL;
+  let blob;
+  let link;
+
+  URL.createObjectURL = (value) => { blob = value; return 'blob:test'; };
+  URL.revokeObjectURL = () => {};
+  globalThis.document = {
+    createElement: () => (link = { href: '', download: '', click() {}, remove() {} }),
+    body: { appendChild(element) { link = element; } },
+  };
+  globalThis.window = { setTimeout() {} };
+
+  try {
+    const result = exportAction();
+    return { result, filename: link?.download, csv: blob ? await blob.text() : null };
+  } finally {
+    URL.createObjectURL = originalCreateObjectUrl;
+    URL.revokeObjectURL = originalRevokeObjectUrl;
+    if (originalDocument === undefined) delete globalThis.document;
+    else globalThis.document = originalDocument;
+    if (originalWindow === undefined) delete globalThis.window;
+    else globalThis.window = originalWindow;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Helpers — create test data with the real type shapes
@@ -65,6 +99,47 @@ test('Shortlisted-only export excludes pending and rejected registrations', () =
   assert.ok(csv.includes('SEC-S'), 'Shortlisted student section present');
   assert.ok(!csv.includes('SEC-P'), 'Pending student section excluded');
   assert.ok(!csv.includes('SEC-R'), 'Rejected student section excluded');
+});
+
+test('actual dashboard export helpers export all students and only exact shortlisted status', async () => {
+  const regs = [
+    makeRegistration('pending', [makeParticipant('Pending', '0012345678901', 'P')], { shortlistStatus: 'pending' }),
+    makeRegistration('shortlisted-duo', [
+      makeParticipant('Selected One', '2403330100134', 'S1'),
+      makeParticipant('Selected Two', '0012345678902', 'S2'),
+    ], { shortlistStatus: 'shortlisted' }),
+    makeRegistration('rejected', [makeParticipant('Rejected', '2503330100003', 'R')], { shortlistStatus: 'rejected' }),
+    makeRegistration('unknown', [makeParticipant('Unknown', '2503330100004', 'U')], { shortlistStatus: 'Shortlisted' }),
+  ];
+  const rows = flattenRegistrations(regs);
+
+  const all = await captureCsvDownload(() => exportStudentRowsCsv(rows));
+  const allRecords = parseCsv(all.csv);
+  assert.equal(all.filename, 'codezy-all-students.csv');
+  assert.deepEqual(allRecords[0], EXPECTED_HEADERS);
+  assert.ok(allRecords.slice(1).every((row) => row.length === 3), 'Every all-student record has exactly three fields');
+  assert.equal(allRecords.length, 6, 'All four registrations, including both duo participants, are exported');
+  assert.deepEqual(allRecords.slice(1).map((row) => row[0]), ['P', 'S1', 'S2', 'R', 'U']);
+  assert.equal(allRecords[1][1], '="0012345678901"', 'Leading zeros remain in the roll-number text formula');
+  assert.equal(allRecords[2][1], '="2403330100134"', 'All 13 digits remain in the roll-number text formula');
+
+  const shortlisted = await captureCsvDownload(() => exportShortlistedStudentRowsCsv(rows));
+  const shortlistRecords = parseCsv(shortlisted.csv);
+  assert.equal(shortlisted.filename, 'codezy-shortlisted-students.csv');
+  assert.equal(shortlisted.result, 2, 'Return count is participants exported');
+  assert.deepEqual(shortlistRecords[0], EXPECTED_HEADERS);
+  assert.ok(shortlistRecords.slice(1).every((row) => row.length === 3), 'Every shortlisted record has exactly three fields');
+  assert.deepEqual(shortlistRecords.slice(1).map((row) => row[0]), ['S1', 'S2']);
+  assert.deepEqual(shortlistRecords.slice(1).map((row) => row[1]), ['="2403330100134"', '="0012345678902"']);
+  assert.equal(shortlistRecords.length, 3, 'Duo shortlisted registration creates one row per participant');
+});
+
+test('shortlisted export reports zero and does not download when no registration is shortlisted', () => {
+  const rows = flattenRegistrations([
+    makeRegistration('pending', [makeParticipant('Pending', '2503330100001')], { shortlistStatus: 'pending' }),
+    makeRegistration('rejected', [makeParticipant('Rejected', '2503330100002')], { shortlistStatus: 'rejected' }),
+  ]);
+  assert.equal(exportShortlistedStudentRowsCsv(rows), 0);
 });
 
 // ===========================================================================

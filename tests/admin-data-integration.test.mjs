@@ -9,6 +9,7 @@ import {
   summarizeRegistrations,
 } from '../src/utils/adminDashboard.ts';
 import { registrationsToCsv } from '../src/utils/export.ts';
+import { parseCsv } from './helpers/parse-csv.mjs';
 
 const mockRawDatabaseRows = [
   {
@@ -219,72 +220,6 @@ test('CSV export separates solo (one row) and duo (two rows) correctly', () => {
   assert.equal(duoCsv.length, 3, 'Duo export must contain 1 header and exactly 2 data rows');
   assert.deepEqual(duoCsv.slice(1).map((row) => row[1]), ['="2403330100101"', '']);
 });
-
-function parseCsv(csv) {
-  const input = csv.startsWith('\uFEFF') ? csv.slice(1) : csv;
-  const records = [];
-  let row = [];
-  let field = '';
-  let quoted = false;
-  let afterQuote = false;
-
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i];
-    if (quoted) {
-      if (char === '"' && input[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (char === '"') {
-        quoted = false;
-        afterQuote = true;
-      } else {
-        field += char;
-      }
-      continue;
-    }
-
-    if (afterQuote) {
-      if (char === ',') {
-        row.push(field);
-        field = '';
-        afterQuote = false;
-      } else if (char === '\r' || char === '\n') {
-        row.push(field);
-        records.push(row);
-        row = [];
-        field = '';
-        afterQuote = false;
-        if (char === '\r' && input[i + 1] === '\n') i++;
-      } else {
-        throw new Error(`Unexpected character after closing quote: ${char}`);
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      if (field.length !== 0) throw new Error('Quote found inside an unquoted CSV field');
-      quoted = true;
-    } else if (char === ',') {
-      row.push(field);
-      field = '';
-    } else if (char === '\r' || char === '\n') {
-      row.push(field);
-      records.push(row);
-      row = [];
-      field = '';
-      if (char === '\r' && input[i + 1] === '\n') i++;
-    } else {
-      field += char;
-    }
-  }
-
-  if (quoted) throw new Error('Unclosed quoted CSV field');
-  if (afterQuote || field.length > 0 || row.length > 0) {
-    row.push(field);
-    records.push(row);
-  }
-  return records;
-}
 
 test('CSV export safely handles commas, quotes, newlines, and formula injection', () => {
   const injectionData = [
