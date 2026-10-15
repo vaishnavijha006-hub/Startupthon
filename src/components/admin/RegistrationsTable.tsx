@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { StudentRegistrationRow, StudentSortField, SortDirection } from '@/utils/adminDashboard';
 import { paginateItems } from '@/utils/adminDashboard';
+import type { ShortlistStatus } from '@/types';
 
 interface RegistrationsTableProps {
   rows: StudentRegistrationRow[];
@@ -65,7 +66,7 @@ function RegistrationsTable({
         <>
           <p className="px-4 pt-3 text-[11px] text-text-secondary sm:px-5 lg:hidden">Swipe horizontally to view all fields.</p>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1050px] border-collapse text-left">
+            <table className="w-full min-w-[1180px] border-collapse text-left">
               <thead className="bg-bg-primary/50">
                 <tr className="border-b border-gunmetal font-mono text-[10px] uppercase tracking-wider text-text-secondary">
                   <th className="px-4 py-3 font-medium">Registration ID</th>
@@ -75,6 +76,7 @@ function RegistrationsTable({
                   <th className="px-4 py-3 font-medium" aria-sort={sortField === 'academicYear' ? sortDirection === 'asc' ? 'ascending' : 'descending' : 'none'}>{sortButton('Academic year', 'academicYear')}</th>
                   <th className="px-4 py-3 font-medium" aria-sort={sortField === 'rollNumber' ? sortDirection === 'asc' ? 'ascending' : 'descending' : 'none'}>{sortButton('Roll number', 'rollNumber')}</th>
                   <th className="px-4 py-3 font-medium" aria-sort={sortField === 'registeredAt' ? sortDirection === 'asc' ? 'ascending' : 'descending' : 'none'}>{sortButton('Registration date', 'registeredAt')}</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 text-right font-medium">Details</th>
                 </tr>
               </thead>
@@ -88,6 +90,7 @@ function RegistrationsTable({
                     <td className="px-4 py-3 text-sm text-text-primary">{row.participant.academicYear}</td>
                     <td className="px-4 py-3 font-mono text-xs text-text-secondary">{row.participant.rollNumber || '—'}</td>
                     <td className="px-4 py-3 text-xs text-text-secondary">{formatDate(row.registration.createdAt)}</td>
+                    <td className="px-4 py-3"><ShortlistBadge status={row.registration.shortlistStatus} /></td>
                     <td className="px-4 py-3 text-right">
                       <button type="button" onClick={() => onSelect(row)} className="border border-laser-cyan/25 px-3 py-1.5 text-xs font-semibold text-laser-cyan transition-colors hover:bg-laser-cyan/10">
                         View
@@ -113,6 +116,37 @@ function RegistrationsTable({
         </>
       )}
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Colour-coded shortlist status badge
+// ---------------------------------------------------------------------------
+const STATUS_STYLES: Record<ShortlistStatus, { dot: string; text: string; label: string }> = {
+  shortlisted: {
+    dot: 'bg-green-400',
+    text: 'text-green-400 border-green-400/30 bg-green-400/10',
+    label: 'Shortlisted',
+  },
+  rejected: {
+    dot: 'bg-red-400',
+    text: 'text-red-400 border-red-400/30 bg-red-400/10',
+    label: 'Not Shortlisted',
+  },
+  pending: {
+    dot: 'bg-gray-400',
+    text: 'text-gray-400 border-gray-400/30 bg-gray-400/10',
+    label: 'Pending',
+  },
+};
+
+export function ShortlistBadge({ status }: { status: ShortlistStatus }) {
+  const style = STATUS_STYLES[status] ?? STATUS_STYLES.pending;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${style.text}`}>
+      <span className={`inline-block h-1.5 w-1.5 rounded-full ${style.dot}`} aria-hidden="true" />
+      {style.label}
+    </span>
   );
 }
 

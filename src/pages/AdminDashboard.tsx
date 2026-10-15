@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Download, GraduationCap, RefreshCw, Users } from 'lucide-react';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminSidebar, { type AdminView } from '@/components/admin/AdminSidebar';
-import RegistrationsTable from '@/components/admin/RegistrationsTable';
+import RegistrationsTable, { ShortlistBadge } from '@/components/admin/RegistrationsTable';
 import SummaryCard from '@/components/admin/SummaryCard';
 import { createAdminSketchUrl, loadAdminRegistrations, updateAdminShortlistStatus, type RegistrationDataset } from '@/services/adminRegistrationSource';
 import type { DashboardRegistration, ShortlistStatus } from '@/types';
@@ -198,6 +198,7 @@ function RegistrationDetails({ registration, onClose, onShortlistChange, shortli
         <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2"><Detail label="Registration ID" value={registration.id ?? 'Not assigned'} /><Detail label="Registration date" value={formatDate(registration.createdAt)} /><Detail label="Team type" value={registration.teamType} /><Detail label="College" value="Not collected by current form" /></dl>
         <div className="mt-6 border border-gunmetal bg-bg-primary/40 p-4">
           <label htmlFor="shortlist-status" className="block text-xs font-semibold uppercase tracking-wider text-text-secondary">Shortlist status</label>
+          <div className="mt-2 mb-3"><ShortlistBadge status={registration.shortlistStatus} /></div>
           <select id="shortlist-status" value={registration.shortlistStatus} disabled={shortlistSaving || !registration.databaseId} onChange={(event) => onShortlistChange(event.target.value as ShortlistStatus)} className="mt-2 w-full border border-gunmetal bg-bg-secondary px-3 py-2.5 text-sm text-text-primary focus:border-laser-cyan focus:outline-none disabled:opacity-50 sm:max-w-xs">
             <option value="pending">Pending</option><option value="shortlisted">Shortlisted</option><option value="rejected">Rejected</option>
           </select>
