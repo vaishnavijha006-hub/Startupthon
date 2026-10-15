@@ -73,11 +73,31 @@ END $$;
 -- -----------------------------------------------------------------------------
 -- STEP 2: CREATE PARTIAL EXPRESSION UNIQUE INDEX ON NORMALIZED ROLL NUMBERS
 -- -----------------------------------------------------------------------------
--- Safely drop existing index if it was previously created on the raw column,
--- ensuring rerun safety and upgrading to the normalized expression index.
-DROP INDEX IF EXISTS public.participants_roll_number_unique_idx;
+-- If an index with this name already exists, verify that it is UNIQUE, targets
+-- trim(roll_number), and includes the required partial predicate. If any aspect
+-- is incompatible or missing, drop it so it can be replaced. If the correct
+-- index already exists, do not unnecessarily drop and rebuild it.
+DO $$
+DECLARE
+    v_indexdef TEXT;
+BEGIN
+    SELECT indexdef INTO v_indexdef
+    FROM pg_catalog.pg_indexes
+    WHERE schemaname = 'public'
+      AND tablename = 'participants'
+      AND indexname = 'participants_roll_number_unique_idx';
 
-CREATE UNIQUE INDEX participants_roll_number_unique_idx
+    IF v_indexdef IS NOT NULL THEN
+        IF v_indexdef NOT ILIKE 'CREATE UNIQUE INDEX%'
+           OR v_indexdef NOT LIKE '%trim(roll_number)%'
+           OR v_indexdef NOT LIKE '%roll_number IS NOT NULL%'
+           OR v_indexdef NOT LIKE '%trim(roll_number) <> %' THEN
+            DROP INDEX public.participants_roll_number_unique_idx;
+        END IF;
+    END IF;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS participants_roll_number_unique_idx
 ON public.participants (trim(roll_number))
 WHERE roll_number IS NOT NULL AND trim(roll_number) <> '';
 
@@ -123,6 +143,9 @@ DECLARE
     v_p1_roll TEXT;
     v_p0_email TEXT;
     v_p1_email TEXT;
+
+    -- Concurrency & constraint variables
+    v_constraint_name TEXT;
 
     -- Generated registration records
     v_registration_id UUID;
@@ -396,8 +419,15 @@ BEGIN
             );
         EXCEPTION
             WHEN unique_violation THEN
-                -- SQLSTATE 23505: converts index violation into a safe user validation message
-                RAISE EXCEPTION 'Roll number "%" is already registered', v_roll;
+                -- Inspect stacked diagnostics to ensure only the roll-number unique index
+                -- violation is reported as a duplicate roll number. Other constraint violations
+                -- (such as primary keys) are re-raised without misattribution.
+                GET STACKED DIAGNOSTICS v_constraint_name = CONSTRAINT_NAME;
+                IF v_constraint_name = 'participants_roll_number_unique_idx' THEN
+                    RAISE EXCEPTION 'Roll number "%" is already registered', v_roll;
+                ELSE
+                    RAISE;
+                END IF;
         END;
     END LOOP;
 

@@ -8,11 +8,17 @@ import type {
 } from '@/types';
 
 export function validateEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const normalized = email.trim().toLowerCase();
+  return normalized.length <= 255
+    && /^[a-z0-9._%+-]+@([a-z0-9][-a-z0-9]*\.)+[a-z]{2,}$/.test(normalized);
 }
 
 export function validatePhone(phone: string): boolean {
-  return /^[+]?[\d\s-]{10,15}$/.test(phone.trim());
+  const normalized = phone.trim();
+  if (!/^[+]?[0-9 -]{10,25}$/.test(normalized)) return false;
+
+  const digitCount = normalized.replace(/[^0-9]/g, '').length;
+  return digitCount >= 10 && digitCount <= 15;
 }
 
 const ROLL_NUMBER_RULES: Record<string, { prefix?: string; required: boolean }> = {
@@ -44,11 +50,13 @@ export function validateParticipant(p: Participant): ParticipantErrors {
   const errors: ParticipantErrors = {};
   if (!p.fullName.trim()) errors.fullName = 'Full name is required';
   else if (p.fullName.trim().length < 2) errors.fullName = 'Name must be at least 2 characters';
+  else if (p.fullName.trim().length > 100) errors.fullName = 'Name must not exceed 100 characters';
 
   if (!p.academicYear.trim()) errors.academicYear = 'Academic year is required';
   else if (!ROLL_NUMBER_RULES[p.academicYear]) errors.academicYear = 'Select a valid academic year';
 
   if (!p.section.trim()) errors.section = 'Section is required';
+  else if (p.section.trim().length > 20) errors.section = 'Section must not exceed 20 characters';
 
   const rollNumberError = validateRollNumber(p.academicYear, p.rollNumber);
   if (rollNumberError) errors.rollNumber = rollNumberError;
@@ -66,9 +74,11 @@ export function validateIdea(idea: StartupIdea): IdeaErrors {
   const errors: IdeaErrors = {};
   if (!idea.title.trim()) errors.title = 'Idea title is required';
   else if (idea.title.trim().length < 3) errors.title = 'Title must be at least 3 characters';
+  else if (idea.title.trim().length > 200) errors.title = 'Title must not exceed 200 characters';
 
   if (!idea.description.trim()) errors.description = 'Idea description is required';
   else if (idea.description.trim().length < 10) errors.description = 'Description must be at least 10 characters';
+  else if (idea.description.trim().length > 5000) errors.description = 'Description must not exceed 5000 characters';
 
   if (!idea.domain) errors.domain = 'Please select a domain';
 

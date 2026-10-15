@@ -39,6 +39,15 @@ test('submit-registration includes live Vercel production origin in DEFAULT_ALLO
   );
 });
 
+test('submit-registration allows the exact Vercel git-main deployment origin', async () => {
+  const code = await readSource('../supabase/functions/submit-registration/index.ts');
+  assert.match(
+    code,
+    /'https:\/\/startupthon-git-main-vaishnavijha006-3492s-projects\.vercel\.app'/,
+    'The exact live registration origin must be explicitly allowlisted for CORS',
+  );
+});
+
 test('submit-registration OPTIONS preflight handler appears before the disallowed-origin guard', async () => {
   const code = await readSource('../supabase/functions/submit-registration/index.ts');
 

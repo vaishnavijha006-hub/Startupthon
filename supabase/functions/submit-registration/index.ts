@@ -20,6 +20,7 @@ const DEFAULT_ALLOWED_ORIGINS = new Set([
   'http://localhost:3000',
   'https://codezy-startup-pitch-x0kr.bolt.host',
   'https://startupthon.vercel.app',
+  'https://startupthon-git-main-vaishnavijha006-3492s-projects.vercel.app',
 ]);
 
 function isOriginAllowed(origin: string | null): boolean {

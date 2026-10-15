@@ -4,7 +4,9 @@ import { ChevronRight, Upload, X, AlertCircle, Loader2, User, Users, GraduationC
 import HudCorners from '@/components/ui/HudCorners';
 import { DOMAINS, ACADEMIC_YEDS } from '@/data/content';
 import { validateRegistration, validateFile, validateRollNumber, hasErrors } from '@/utils/validation';
-import { supabase } from '@/services/supabase';
+import { FunctionsFetchError, FunctionsHttpError, FunctionsRelayError } from '@supabase/supabase-js';
+import { getRegistrationRequestErrorMessage } from '@/utils/registrationErrors';
+import { isSupabaseConfigured, supabase, supabaseConfigurationIssue } from '@/services/supabase';
 import type {
   TeamType,
   Participant,
@@ -99,6 +101,8 @@ function RegistrationPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    // Ensure any previous registration data is cleared before a new attempt
+    sessionStorage.removeItem('pendingRegistration');
     e.preventDefault();
     setSubmitError(null);
 
@@ -107,6 +111,14 @@ function RegistrationPage() {
 
     if (hasErrors(validationErrors)) {
       setSubmitError('Please correct the highlighted fields before submitting.');
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      const message = supabaseConfigurationIssue === 'invalid-url'
+        ? 'Registration is unavailable because this site has an invalid Supabase URL configuration. Please contact the event organizers.'
+        : 'Registration is unavailable because this site is missing its Supabase configuration. Please contact the event organizers.';
+      setSubmitError(message);
       return;
     }
 
@@ -136,12 +148,34 @@ function RegistrationPage() {
       });
 
       if (error) {
-        setSubmitError(error.message || 'Failed to connect to the registration service. Please try again.');
+        if (error instanceof FunctionsHttpError) {
+          let body: unknown;
+          if (error.context.status === 400) {
+            try {
+              body = await error.context.clone().json();
+            } catch {
+              // Keep the status-based message when the response is not JSON.
+            }
+          }
+          setSubmitError(getRegistrationRequestErrorMessage({
+            kind: 'http',
+            status: error.context.status,
+            body,
+          }));
+        } else if (error instanceof FunctionsRelayError) {
+          setSubmitError(getRegistrationRequestErrorMessage({ kind: 'relay' }));
+        } else if (error instanceof FunctionsFetchError) {
+          setSubmitError(getRegistrationRequestErrorMessage({ kind: 'fetch' }));
+        } else {
+          setSubmitError(getRegistrationRequestErrorMessage({ kind: 'unexpected' }));
+        }
         return;
       }
 
       if (!data || !data.success) {
-        setSubmitError(data?.error || 'Registration was not confirmed by the server. Please try again.');
+        setSubmitError(getRegistrationRequestErrorMessage({ kind: 'http', status: 400, body: data }));
+        // On unsuccessful response, clear any stale data
+        sessionStorage.removeItem('pendingRegistration');
         return;
       }
 
@@ -156,9 +190,9 @@ function RegistrationPage() {
       };
       sessionStorage.setItem('pendingRegistration', JSON.stringify(confirmationPayload));
       navigate('/registration-confirmation');
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
-      setSubmitError(message);
+    } catch {
+      setSubmitError('An unexpected registration error occurred. Please try again.');
+      sessionStorage.removeItem('pendingRegistration');
     } finally {
       setSubmitting(false);
     }

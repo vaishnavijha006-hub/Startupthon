@@ -209,13 +209,19 @@ test('simulates concurrent duplicate race handled by partial unique index', () =
   const index = new Set();
   const successfulInserts = [];
 
-  function simulateInsertWithUniqueIndex(rollNumber) {
+  function simulateInsertWithUniqueIndex(rollNumber, constraintName = 'participants_roll_number_unique_idx') {
     if (rollNumber) {
       if (index.has(rollNumber)) {
         // Simulates PostgreSQL unique_violation (23505) caught by RPC exception block
-        const error = new Error(`Roll number "${rollNumber}" is already registered`);
-        error.code = '23505';
-        throw error;
+        if (constraintName === 'participants_roll_number_unique_idx') {
+          const error = new Error(`Roll number "${rollNumber}" is already registered`);
+          error.code = '23505';
+          throw error;
+        } else {
+          const genericError = new Error(`duplicate key value violates unique constraint "${constraintName}"`);
+          genericError.code = '23505';
+          throw genericError;
+        }
       }
       index.add(rollNumber);
     }
@@ -225,10 +231,16 @@ test('simulates concurrent duplicate race handled by partial unique index', () =
   // Concurrent transaction 1 wins
   assert.doesNotThrow(() => simulateInsertWithUniqueIndex('2503330100134'));
 
-  // Concurrent transaction 2 hits unique constraint and safely converts to user-friendly message
+  // Concurrent transaction 2 hits roll-number unique constraint and safely converts to user-friendly message
   assert.throws(
-    () => simulateInsertWithUniqueIndex('2503330100134'),
+    () => simulateInsertWithUniqueIndex('2503330100134', 'participants_roll_number_unique_idx'),
     { message: /Roll number "2503330100134" is already registered/ }
+  );
+
+  // A different unique constraint violation is not falsely reported as a roll number duplicate
+  assert.throws(
+    () => simulateInsertWithUniqueIndex('2503330100134', 'participants_pkey'),
+    { message: /duplicate key value violates unique constraint "participants_pkey"/ }
   );
 
   assert.equal(successfulInserts.length, 1);
@@ -237,16 +249,16 @@ test('simulates concurrent duplicate race handled by partial unique index', () =
 test('migration 20261014000002 defines partial unique index and avoids redundant composite index', async () => {
   const sql = await readSource('../supabase/migrations/20261014000002_prevent_duplicate_roll_numbers.sql');
 
-  // Verify safe drop of pre-existing raw index for rerun safety
+  // Verify safe drop of pre-existing raw index for upgrade without dropping correct existing index
   assert.match(
     sql,
-    /DROP INDEX IF EXISTS public\.participants_roll_number_unique_idx;/i
+    /DROP INDEX public\.participants_roll_number_unique_idx;/i
   );
 
-  // Verify partial expression unique index on trim(roll_number) exists
+  // Verify partial expression unique index on trim(roll_number) uses IF NOT EXISTS
   assert.match(
     sql,
-    /CREATE UNIQUE INDEX participants_roll_number_unique_idx\s+ON public\.participants\s*\(trim\(roll_number\)\)\s+WHERE roll_number IS NOT NULL AND trim\(roll_number\) <> '';/i
+    /CREATE UNIQUE INDEX IF NOT EXISTS participants_roll_number_unique_idx\s+ON public\.participants\s*\(trim\(roll_number\)\)\s+WHERE roll_number IS NOT NULL AND trim\(roll_number\) <> '';/i
   );
 
   // Verify redundant composite index (registration_id, roll_number) is NOT added
@@ -262,9 +274,11 @@ test('migration 20261014000002 defines partial unique index and avoids redundant
   assert.match(sql, /Duo participants cannot share the same roll number/);
   assert.match(sql, /Duo participants cannot share the same email address/);
 
-  // Verify cross-registration duplicate check uses trim(roll_number) and unique_violation handler
+  // Verify cross-registration duplicate check uses trim(roll_number) and specific constraint check
   assert.match(sql, /EXISTS\s*\(\s*SELECT 1\s+FROM public\.participants\s+WHERE trim\(roll_number\) = v_roll\s*\)/);
   assert.match(sql, /WHEN unique_violation THEN/);
+  assert.match(sql, /GET STACKED DIAGNOSTICS v_constraint_name = CONSTRAINT_NAME;/);
+  assert.match(sql, /IF v_constraint_name = 'participants_roll_number_unique_idx' THEN/);
 
   // Verify security settings
   assert.match(sql, /SECURITY DEFINER/);
