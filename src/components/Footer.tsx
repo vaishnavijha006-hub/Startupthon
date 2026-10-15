@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Instagram, ChevronRight } from 'lucide-react';
+import { Instagram, Linkedin, ChevronRight } from 'lucide-react';
 import { Logo } from './Logo';
 
 const QUICK_LINKS = [
@@ -63,7 +63,7 @@ function Footer() {
               Connect
             </h3>
             <p className="mb-4 text-sm text-text-secondary">
-              Follow us on Instagram for updates and announcements.
+              Follow us on social media for updates and announcements.
             </p>
             <div className="flex gap-3">
               <a
@@ -74,6 +74,15 @@ function Footer() {
                 className="flex h-10 w-10 items-center justify-center border border-gunmetal bg-bg-primary/50 text-text-secondary transition-all hover:border-laser-cyan/50 hover:text-laser-cyan"
               >
                 <Instagram className="h-4 w-4" />
+              </a>
+              <a
+                href="https://www.linkedin.com/showcase/codezyrkgitm/home/"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="LinkedIn"
+                className="flex h-10 w-10 items-center justify-center border border-gunmetal bg-bg-primary/50 text-text-secondary transition-all hover:border-laser-cyan/50 hover:text-laser-cyan"
+              >
+                <Linkedin className="h-4 w-4" />
               </a>
             </div>
           </div>
