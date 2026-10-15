@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Github, Twitter, Linkedin, Mail, ChevronRight } from 'lucide-react';
+import { Instagram, ChevronRight } from 'lucide-react';
 import { Logo } from './Logo';
 
 const QUICK_LINKS = [
@@ -57,29 +57,24 @@ function Footer() {
             </ul>
           </div>
 
-          {/* Contact placeholders */}
+          {/* Connect */}
           <div>
             <h3 className="mb-4 font-display text-sm font-semibold uppercase tracking-wider text-laser-cyan">
               Connect
             </h3>
             <p className="mb-4 text-sm text-text-secondary">
-              Official contact links will be added here once available.
+              Follow us on Instagram for updates and announcements.
             </p>
             <div className="flex gap-3">
-              {[
-                { icon: Mail, label: 'Email' },
-                { icon: Twitter, label: 'Twitter' },
-                { icon: Github, label: 'GitHub' },
-                { icon: Linkedin, label: 'LinkedIn' },
-              ].map(({ icon: Icon, label }) => (
-                <span
-                  key={label}
-                  title={label}
-                  className="flex h-10 w-10 items-center justify-center border border-gunmetal bg-bg-primary/50 text-text-secondary transition-all hover:border-laser-cyan/50 hover:text-laser-cyan"
-                >
-                  <Icon className="h-4 w-4" />
-                </span>
-              ))}
+              <a
+                href="https://www.instagram.com/_codezy"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Instagram"
+                className="flex h-10 w-10 items-center justify-center border border-gunmetal bg-bg-primary/50 text-text-secondary transition-all hover:border-laser-cyan/50 hover:text-laser-cyan"
+              >
+                <Instagram className="h-4 w-4" />
+              </a>
             </div>
           </div>
         </div>
