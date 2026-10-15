@@ -53,5 +53,8 @@ test('does not display unknown HTTP body text or server internals', () => {
 
 test('uses safe status-specific messages for HTTP and server errors', () => {
   assert.match(getRegistrationRequestErrorMessage({ kind: 'http', status: 403 }), /HTTP 403/);
-  assert.match(getRegistrationRequestErrorMessage({ kind: 'http', status: 503 }), /HTTP 503/);
+  assert.equal(
+    getRegistrationRequestErrorMessage({ kind: 'http', status: 503 }),
+    'The registration service is temporarily unavailable. Please try again without a sketch, or try again later.',
+  );
 });
