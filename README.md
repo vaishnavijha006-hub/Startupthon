@@ -1,127 +1,119 @@
-# CodezY — Engineer The Future
+# Startupthon — CodezY Startup Pitch
 
-[CodezY](https://codezy-startup-pitch-x0kr.bolt.host/) is a student startup idea pitching event. It gives students a place to share ideas, show their creativity, and take a first step toward building something meaningful.
+Startupthon is the CodezY startup-pitch registration platform. Students can submit startup ideas and register as solo participants or duos; organizers can review registrations through the admin dashboard.
 
-Students can register individually or as a team and submit a startup idea. Submissions are reviewed, and selected students or teams may be invited to present their ideas to a panel.
+<p align="center">
+  <a href="https://startupthon.vercel.app"><strong>Visit the Live Website</strong></a>
+  &nbsp; · &nbsp;
+  <a href="https://startupthon.vercel.app/admin/dashboard"><strong>Admin Dashboard</strong></a>
+  &nbsp; · &nbsp;
+  <a href="https://github.com/vaishnavijha006-hub/Startupthon"><strong>GitHub Repository</strong></a>
+</p>
 
-> **Project status:** This branch includes Supabase-backed registration, admin authentication and data access, shortlist updates, and private sketch uploads. A successful local build does not verify the live Supabase project; apply and verify the migrations and Edge Function configuration before production use.
+> The dashboard and registration backend require the appropriate Supabase project configuration and database setup. A successful local build does not confirm that live authentication, database access, uploads, or migrations are configured.
 
-## Event overview
+## Contents
 
-Participants can submit an idea title and description, choose a domain such as AI, healthcare, finance, education, or environment, describe prototype availability, and optionally upload a sketch. File storage is not connected yet. The current frontend supports individual and team registration.
+- [Features](#features)
+- [Technology stack](#technology-stack)
+- [Admin dashboard](#admin-dashboard)
+- [Local development](#local-development)
+- [Project scripts](#project-scripts)
+- [Project structure](#project-structure)
+- [Deployment notes](#deployment-notes)
 
-The event process is:
+## Features
 
-1. Students register and submit their startup ideas.
-2. The event team reviews submissions and may shortlist promising ideas.
-3. Selected students or teams may get an opportunity to pitch before a panel.
-4. Pitching sessions may take place over 3–4 days during faculty-approved time slots.
+- Responsive public event and registration pages.
+- Solo and duo registration forms with participant and startup idea details.
+- Academic-year roll-number validation: 13 digits; years 2, 3, and 4 require prefixes `25`, `24`, and `23`. Year 1 roll numbers are optional.
+- Client-side validation for participant details, phone numbers, email addresses, ideas, and optional sketch files.
+- Server-confirmed registration identifiers and a confirmation view. If a submission is only saved locally as a draft, the confirmation page labels it as unconfirmed.
+- Optional PNG, JPEG, WebP, or PDF sketch/blueprint upload (up to 5 MB) through the Supabase Edge Function and private Storage bucket, when the backend is configured.
+- Admin dashboard overview and registration statistics, with registration search, filters, sorting, and pagination.
+- Detailed participant and startup idea views, including duo participants.
+- Shortlist status management (`pending`, `shortlisted`, or `rejected`), backed by the database when its migration and policies are applied.
+- CSV export with exactly three columns: `Student Section`, `Student Roll Number`, and `Startup Idea Title`. Duo registrations export one row per participant.
+- Security measures in code include server-side registration validation, duplicate roll-number constraints, an Edge Function boundary for privileged registration writes, admin checks based on server-controlled claims, RLS policies defined in migrations, a private sketch bucket, and upload size/type/signature checks.
 
-Presentation schedules are intended to be shared manually through the official WhatsApp group; no WhatsApp integration is implemented on the website.
+## Technology stack
 
-### After shortlisting
-
-Depending on the proposal and available resources, selected participants may have opportunities for mentorship, funding support, prototype development help, or technical support and networking. These opportunities are subject to availability and are not guaranteed.
-
-Students do not need a fully developed product to participate. An interesting idea, a clear understanding of the problem, and a possible solution are enough to get started.
-
-## Website features
-
-- Public event and startup pitch information.
-- Registration for individuals and teams, including participant and idea details.
-- Physical certificate announcement for successfully registered participants, subject to the event's certificate distribution process.
-- Supabase-backed admin login and database dashboard, protected by server-controlled admin claims and RLS policies.
-- Optional sketch upload to a private Supabase Storage bucket, with admin-only signed access.
-- Responsive layouts for desktop, tablet, and mobile.
-
-## Tech stack
-
-| Layer | Technology |
+| Area | Technology |
 | --- | --- |
-| UI | React |
+| UI | React 18 |
 | Language | TypeScript |
-| Build tool | Vite |
+| Build tool | Vite 5 |
 | Styling | Tailwind CSS |
-| Icons | Lucide React |
 | Routing | React Router |
-| Backend | Supabase Auth, Postgres, Edge Functions, and private Storage |
+| Icons | Lucide React |
+| Backend client and services | Supabase Auth, Postgres, Edge Functions, and Storage |
 
-## Getting started
+## Admin dashboard
 
-### Requirements
+The [Startupthon Admin Dashboard](https://startupthon.vercel.app/admin/dashboard) is intended for authorized administrators. It provides registration statistics and tools to search, filter, sort, paginate, and review participant and startup idea details. Administrators can update shortlist status, export matching student records as CSV, and access uploaded sketches where the private Storage bucket and authorization policies are configured.
+
+The application checks server-controlled Supabase authorization claims, and the migrations define RLS policies for database authorization. This README does not provide credentials or private configuration. Verify live authentication, registration retrieval, shortlist persistence, and file access against the target Supabase project before relying on them.
+
+## Local development
+
+### Prerequisites
 
 - Node.js 18 or later
 - npm
 
-### Run locally
+### Install and start
 
 ```bash
-git clone https://github.com/vaishnavijha006-hub/Startupthon
+git clone https://github.com/vaishnavijha006-hub/Startupthon.git
 cd Startupthon
 npm install
 npm run dev
 ```
 
-Open the local URL shown by Vite, usually `http://localhost:5173`.
+Open the local address printed by Vite (usually `http://localhost:5173`).
+
+### Environment configuration
+
+The browser application reads these Vite variables at build time:
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable client key |
+
+Create an ignored `.env.local` file in the repository root and add the values for your development Supabase project. Do not commit environment files. Vite-exposed variables are included in browser code; use only the publishable client key here, never a service-role key.
+
+The `submit-registration` Edge Function separately reads `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from its server-side Supabase environment. The optional `ALLOWED_ORIGINS` variable can add explicitly permitted browser origins for CORS. Configure these through the Edge Function’s secret/configuration mechanism; never put the service-role key in a `VITE_` variable or frontend file.
+
+## Project scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Vite development server |
+| `npm run build` | Create a production build in `dist/` |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run the TypeScript check |
+| `node --test tests/*.test.mjs` | Run the Node.js test suite |
 
 ## Project structure
 
 ```text
 src/
-├── components/       # Shared and admin UI components
+├── components/       # Shared interface and admin components
 ├── pages/            # Landing, registration, confirmation, and admin pages
-├── services/         # Data-source boundary for future backend integration
+├── services/         # Supabase, admin auth, and registration data access
 ├── types/            # Shared TypeScript types
-└── utils/            # Validation, dashboard helpers, and export utilities
-tests/                # Node.js tests for validation and frontend behavior
+└── utils/            # Validation, dashboard, and CSV helpers
+supabase/
+├── functions/        # Registration Edge Function
+└── migrations/       # Registration, RLS, shortlist, and Storage SQL
+tests/                # Node.js tests for application behavior and contracts
 ```
 
-## Scripts
+## Deployment notes
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the Vite development server |
-| `npm run lint` | Run ESLint |
-| `npm run typecheck` | Run the TypeScript check |
-| `npm run build` | Create the production build in `dist/` |
-| `node --test tests/*.test.mjs` | Run the Node.js test files |
-
-## Deployment
-
-The original public site is hosted on Bolt:
-
-- [Live website](https://codezy-startup-pitch-x0kr.bolt.host/)
-- [Registration](https://codezy-startup-pitch-x0kr.bolt.host/register)
-- [Admin login](https://codezy-startup-pitch-x0kr.bolt.host/admin/login)
-- [Admin dashboard](https://codezy-startup-pitch-x0kr.bolt.host/admin/dashboard) (frontend preview; not secured)
-
-The Vercel Preview is connected to this repository branch. Production registration, admin access, storage, and migration state still require verification against the live Supabase project. Do not treat a successful frontend build as proof of live functionality. Build the project with `npm run build` and deploy the generated `dist/` directory to a static host.
-
-## Roadmap
-
-- Verify migrations, RLS, Edge Function secrets, Preview CORS, and real registration submission in Supabase.
-- Verify administrator claims and authorization against the live project.
-- Verify private sketch bucket policies and signed admin access against the live project.
-- Add analytics and continue improving accessibility and SEO.
+The public website is available at [startupthon.vercel.app](https://startupthon.vercel.app). Backend features depend on the corresponding Supabase schema, migrations, Edge Function secrets, CORS allowlist, and Storage policies being configured for the deployment environment. Verify those items and test them against the target Supabase project before relying on live registration or admin operations.
 
 ## Contributing
 
-Suggestions and contributions are welcome. Create a feature branch, make focused changes, run the project checks, and open a pull request for review.
-
-## License
-
-No license has been specified for this project yet.
-
-## Organized by
-
-**CodezY** — Think it. Pitch it. Build it.
-
-The event is organized with faculty permission. Shortlisting, pitching opportunities, and additional support depend on the event review process and available resources.
-
-## Contact
-
-**CodezY Team**
-
-- Website: https://codezy-startup-pitch-x0kr.bolt.host/
-- Email: _your-email@example.com_
-- LinkedIn / X: _add your links_
+Create a focused branch, make a scoped change, run the relevant checks, and open a pull request for review.
